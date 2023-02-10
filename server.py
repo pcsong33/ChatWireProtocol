@@ -6,6 +6,7 @@ time.sleep(1)
 
 s = socket.socket()
 host = socket.gethostname()
+host = "dhcp-10-250-141-46.harvard.edu"
 ip = socket.gethostbyname(host)
 port = 1234
 s.bind((host, port))
