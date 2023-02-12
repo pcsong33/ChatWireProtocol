@@ -5,7 +5,9 @@
 
 I've rewritten the application using threading now. It's at a stage where multiple clients can connect to the server, but they can't send each other messages yet (rather than can send messages to the server, which is just printed out as of now). Still pretty stumped on how to send messages in a continuous stream but I'll investigate this next.
 
-I'm also not sure why but I'm able to connect 7 clients (and probably more but I haven't tested beyond that), even tho i've set the listen parameter to .
+I'm also not sure why but I'm able to connect 7 clients (and probably more but I haven't tested beyond that), even tho i've set the listen parameter to 5.
+
+Another thing to keep in mind is later when testing is the 280 character limit.
 
 ## 2/9/2023
 
