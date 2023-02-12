@@ -1,6 +1,12 @@
 
 # CS262 Engineering Notebook | Ashley Zhuang & Patrick Song
 
+## 2/11/2023
+
+I've rewritten the application using threading now. It's at a stage where multiple clients can connect to the server, but they can't send each other messages yet (rather than can send messages to the server, which is just printed out as of now). Still pretty stumped on how to send messages in a continuous stream but I'll investigate this next.
+
+I'm also not sure why but I'm able to connect 7 clients (and probably more but I haven't tested beyond that), even tho i've set the listen parameter to .
+
 ## 2/9/2023
 
 We started by creating a very bare bones application that allows the server and a client to send messages to each other. It is a little bit buggy at this point, as the client can only send messages when the server has sent one before, and also the client can't send messages at all once the server has already previously connected with a client. We also currently have the host name hardcoded because since the host name was different across our different devices, so we'll have to investigate that further.

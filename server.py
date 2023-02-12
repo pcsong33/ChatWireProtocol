@@ -1,36 +1,46 @@
 import time, socket, sys
+from threading import Thread
+from collections import deque
 
-print("\nWelcome to Chat Room\n")
-print("Initialising....\n")
-time.sleep(1)
+clients = {}
 
-s = socket.socket()
-host = socket.gethostname()
-host = "dhcp-10-250-141-46.harvard.edu"
-ip = socket.gethostbyname(host)
-port = 1234
-s.bind((host, port))
-print(host, "(", ip, ")\n")
-name = input(str("Enter your name: "))
+def on_new_client(c_socket, addr):
+    c_name = c_socket.recv(1024).decode()
+    clients[c_name] = [True, []]
 
-s.listen(1)
-print("\nWaiting for incoming connections...\n")
-conn, addr = s.accept()
-print("Received connection from ", addr[0], "(", addr[1], ")\n")
+    print(f'\n[+] Connected to {c_name} at {addr[0]} ({addr[1]})\n')
 
-s_name = conn.recv(1024)
-s_name = s_name.decode()
-print(s_name, "has connected to the chat room\nEnter [e] to exit chat room\n")
-conn.send(name.encode())
+    while True:
+        # receiver = c_socket.recv(1024).decode()
+        msg = c_socket.recv(1024).decode()
 
-while True:
-    message = input(str("Me : "))
-    if message == "[e]":
-        message = "Left chat room!"
-        conn.send(message.encode())
-        print("\n")
-        break
-    conn.send(message.encode())
-    message = conn.recv(1024)
-    message = message.decode()
-    print(s_name, ":", message)
+        if msg == '[e]':
+            break
+
+        print(f'{c_name} sent {msg}')
+
+    print(f'\n[-] {c_name} has left. Disconnecting client.\n')
+    c_socket.close()
+
+try:
+    s = socket.socket()
+    host = socket.gethostname()
+    # host = "dhcp-10-250-203-22.harvard.edu"
+    ip = socket.gethostbyname(host)
+    port = 1538
+    print(f'\n{host} ({ip})')
+
+    s.bind((host, port))
+    print('\nServer started!')
+
+    s.listen(5)
+    print('\nWaiting for incoming connections...')
+
+    while True:
+        c_socket, addr = s.accept()
+        t = Thread(target=on_new_client, args=(c_socket, addr))
+        t.start()
+        
+except KeyboardInterrupt:
+    print('\nServer closed with KeyboardInterrupt!')
+    s.close()
