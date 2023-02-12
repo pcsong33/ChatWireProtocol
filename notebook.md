@@ -5,9 +5,13 @@
 
 I've rewritten the application using threading now. It's at a stage where multiple clients can connect to the server, but they can't send each other messages yet (rather than can send messages to the server, which is just printed out as of now). Still pretty stumped on how to send messages in a continuous stream but I'll investigate this next.
 
-I'm also not sure why but I'm able to connect 7 clients (and probably more but I haven't tested beyond that), even tho i've set the listen parameter to 5.
+I'm also not sure why but I'm able to connect 7 clients (and probably more but I haven't tested beyond that), even though I've set the listen parameter to 5.
 
 Another thing to keep in mind is later when testing is the 280 character limit.
+
+Ah I think we can change the client dictionary to store the c_socket instead of the connected boolean. Also, I think I've solved the receiving messages continuously problem with a background thread for clients!
+
+I've been able to implement it now such that clients can send messages to each other when they are both logged in, and they receive messages on demand. #2 and #5 on the next steps list from last time have been dealt with, but the others are still todos. 
 
 ## 2/9/2023
 
@@ -18,8 +22,8 @@ We realized though that since the specs ask for multiple users to be able to cha
 This probably requires threading, so that the server can accept multiple connections (?). Since we are rewriting most of the code, some of these bugs may not be applicable anymore, but we'll see.
 
 Next steps (brainstorm):
-* Investigate why host name is appearing differently.
-* Re-write code so that multiple clients can connect to server.
-* For queue-ing messages for clients: keep a dictionary where key = existing username, value = (boolean connected, array [(message, sender)])
-* When delivering an undelivered message, first check if the sender is in the dictionary, in case their account has been deleted.
-* How to receive messages in a continuous stream? Right now not sure how to receive multiple messages without sending messages in between.
+1. Investigate why host name is appearing differently.
+1. Re-write code so that multiple clients can connect to server.
+1. For queue-ing messages for clients: keep a dictionary where key = existing username, value = (boolean connected, array [(message, sender)])
+1. When delivering an undelivered message, first check if the sender is in the dictionary, in case their account has been deleted.
+1. How to receive messages in a continuous stream? Right now not sure how to receive multiple messages without sending messages in between.
