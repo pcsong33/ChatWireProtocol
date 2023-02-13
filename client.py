@@ -20,18 +20,21 @@ print('Connected...\n')
 
 s.send(name.encode())
 
-
+# Background thread listens for incoming messages to print
 def receive_msgs():
     for msg in iter(lambda: s.recv(1024).decode(), ''):
         msg = msg.rsplit('<', 1) 
-        sender = msg[1].strip()
-        msg = msg[0].strip()
 
-        print(f'{sender}: {msg}\n')
+        # Message from the server (e.g. error message, list accounts)
+        if len(msg) < 2:
+            print(msg[0])
+        # Message from another client
+        else:
+            sender = msg[1].strip()
+            msg = msg[0].strip()
 
-background_thread = Thread(target=receive_msgs)
-background_thread.daemon = True
-background_thread.start()
+            print(f'{sender}: {msg}\n')
+
 
 print(' -------------------------------------------------------------------------------------------------------------------')
 print('|                                             Welcome to the Chat Room!                                             |')
@@ -44,13 +47,24 @@ print('Hello there, Bob! > bobs_username_123\n')
 print('Messages will appear with the sender\'s username in front. For example: ')
 print('bob: Long time no see, Alice!\n')
 
+print('Enter LIST to list all accounts')
+print('Enter DELETE to delete your account')
+
 print('ENTER [e] TO EXIT\n')
 
 print(' -------------------------------------------------------------------------------------------------------------------')
 
+background_thread = Thread(target=receive_msgs)
+background_thread.daemon = True
+background_thread.start()
+
+# Send message to the server to deliver to recipient
 while True:
     msg = input()
     s.send(msg.encode())
 
     if msg == '[e]':
+        break
+
+    if msg == 'DELETE':
         break
