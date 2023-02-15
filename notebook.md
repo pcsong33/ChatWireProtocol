@@ -1,6 +1,18 @@
 
 # CS262 Engineering Notebook | Ashley Zhuang & Patrick Song
 
+
+## 2/15/2023
+
+Ensured that multiple logins cannot occur. If the same user tries to login when they are already connected to the server, the program will exit gracefully. I added a `.active` attribute to the client class to check for connection status. Also, did some code clean-up, moving code into main() functions for both client and server files.
+1. Investigate why host name is appearing differently.
+1. Check if the sender of queued msg is in the dictionary, in case their account has been deleted. 
+1. ~~Ensure multiple logins to an account cannot occur.~~
+1. Test the code a lottttt more, across multiple devices too. 
+1. General code clean up and abstraction.
+
+
+
 ## 2/12/2023
 
 I've added the functionality for queueing messages when a user is away and then delivering them once they return! I've also added the ability to list and delete accounts. The specs are pretty much all satisfied at this point, but some improvements are still needed. Some next steps:

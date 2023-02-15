@@ -2,12 +2,14 @@ import time, socket, sys
 from threading import Thread
 from collections import deque
 
+
 class Client:
     def __init__(self, name, socket=None, addr=None):
         self.name = name
         self.socket = socket
         self.addr = addr
         self.msgs = []
+        self.active = False
     
     def set_socket_addr(self, socket, addr):
         self.socket = socket
@@ -24,13 +26,16 @@ class Client:
     def clear_msgs(self):
         self.msgs = []
 
+
 clients = {}
 
-# Threaded excution for each client
+
+# Threaded execution for each client
 def on_new_client(c_socket, addr, c_name):
     print(f'\n[+] Connected to {c_name} at {addr[0]} ({addr[1]})\n')
 
     client = clients[c_name]
+    client.active = True
 
     # Send any undelivered messages 
     for sender, msg in client.msgs:
@@ -45,12 +50,13 @@ def on_new_client(c_socket, addr, c_name):
 
         # Client is exiting the chat
         if msg == '[e]':
+            client.active = False
             break
         # Client is deleting their account
         if msg == 'DELETE':
             clients.pop(c_name)
             break
-        # Client wants list of all usernmes
+        # Client wants list of all usernames
         if msg == 'LIST':
             accounts = '' 
 
@@ -62,7 +68,7 @@ def on_new_client(c_socket, addr, c_name):
 
         msg = msg.rsplit('>', 1)
         
-        ## Handle Invalid Inputs
+        # Handle Invalid Inputs
         if len(msg) < 2:
             c_socket.send('ERROR: No recipient specified. To send a message to a user, please input your message followed by \'>\' and the recipient\'s username.\n'.encode())
             continue
@@ -80,7 +86,7 @@ def on_new_client(c_socket, addr, c_name):
             c_socket.send('ERROR: Cannot send blank message.\n'.encode())
             continue
 
-        ## Send/Queue Message
+        # Send/Queue Message
         receiver_client = clients[receiver]
 
         if not receiver_client.socket:
@@ -93,35 +99,50 @@ def on_new_client(c_socket, addr, c_name):
     print(f'\n[-] {c_name} has left. Disconnecting client.\n')
     client.disconnect()
 
-try:
-    s = socket.socket()
-    host = socket.gethostname()
-    # host = "dhcp-10-250-203-22.harvard.edu"
-    ip = socket.gethostbyname(host)
-    port = 1538
-    print(f'\n{host} ({ip})')
 
-    s.bind((host, port))
-    print('\nServer started!')
+def main():
+    try:
+        s = socket.socket()
+        host = socket.gethostname()
+        # host = "dhcp-10-250-203-22.harvard.edu"
+        ip = socket.gethostbyname(host)
+        port = 1538
+        print(f'\n{host} ({ip})')
 
-    s.listen(5)
-    print('\nWaiting for incoming connections...')
+        s.bind((host, port))
+        print('\nServer started!')
 
-    while True:
-        c_socket, addr = s.accept()
-        c_name = c_socket.recv(1024).decode().strip()
+        s.listen(5)
+        print('\nWaiting for incoming connections...')
 
-        # Client already exists
-        if c_name in clients: # TODO: handle login when already connected
-            clients[c_name].set_socket_addr(c_socket, addr)
-        # New user
-        else:
-            clients[c_name] = Client(c_name, c_socket, addr)
+        while True:
+            c_socket, addr = s.accept()
+            c_name = c_socket.recv(1024).decode().strip()
 
-        t = Thread(target=on_new_client, args=(c_socket, addr, c_name))
-        t.start()
+            # Client already exists
+            if c_name in clients:
+                # user is not already logged in - connect to server
+                if not clients[c_name].active:
+                    clients[c_name].set_socket_addr(c_socket, addr)
+                    clients[c_name].active = True
+                # user is already logged in - refuse connection
+                else:
+                    c_socket.send("You are already connected to this sever!".encode())
+                    continue
 
-except KeyboardInterrupt:
-    # TODO: close all client sockets too
-    print('\nServer closed with KeyboardInterrupt!')
-    s.close()
+            # New user
+            else:
+                clients[c_name] = Client(c_name, c_socket, addr)
+
+            c_socket.send("Connected!".encode())
+            t = Thread(target=on_new_client, args=(c_socket, addr, c_name))
+            t.start()
+
+    except KeyboardInterrupt:
+        # TODO: close all client sockets too
+        print('\nServer closed with KeyboardInterrupt!')
+        s.close()
+
+
+if __name__ == "__main__":
+    main()
