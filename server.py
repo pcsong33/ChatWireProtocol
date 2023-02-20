@@ -1,4 +1,5 @@
 import time, socket, sys
+import fnmatch
 from threading import Thread
 from collections import deque
 
@@ -9,16 +10,18 @@ class Client:
         self.socket = socket
         self.addr = addr
         self.msgs = []
-        self.active = False
+        self.active = True
     
     def set_socket_addr(self, socket, addr):
         self.socket = socket
         self.addr = addr
 
     def disconnect(self):
-        self.socket.close()
+        if self.socket:
+            self.socket.close()
         self.socket = None
         self.addr = None
+        self.active = False
 
     def queue_msg(self, sender, msg):
         self.msgs.append((sender, msg))
@@ -29,75 +32,143 @@ class Client:
 
 clients = {}
 
+# Send messages from server to client according to wire protocol
+def send_message(c_socket, status, is_chat, msg):
+    # msg_len = len(msg) # TODO: should we do anything w msg len?
+    data = chr(status) + str(is_chat) + msg
+
+    c_socket.sendall(data.encode())
 
 # Threaded execution for each client
-def on_new_client(c_socket, addr, c_name):
-    print(f'\n[+] Connected to {c_name} at {addr[0]} ({addr[1]})\n')
-
-    client = clients[c_name]
-    client.active = True
-
-    # Send any undelivered messages 
-    for sender, msg in client.msgs:
-        client.socket.send((msg + '<' + sender).encode())
-        print(f'{sender} sent {msg} to {c_name}')
-        time.sleep(0.1)
-
-    client.clear_msgs()
+def on_new_client(c_socket, addr):
+    c_name = None
+    client = None
 
     while True:
-        msg = c_socket.recv(1024).decode()
-
-        # Client is exiting the chat
-        if msg == '[e]':
-            client.active = False
+        request = c_socket.recv(1024).decode() # TODO: fix to have header?
+        op, msg = request.split('|', 1) if '|' in request else (request, '')
+        op, msg = op.strip(), msg.strip()
+        
+        # Exit the chat
+        if op == '0':
             break
-        # Client is deleting their account
-        if msg == 'DELETE':
-            clients.pop(c_name)
-            break
-        # Client wants list of all usernames
-        if msg == 'LIST':
-            accounts = '' 
 
-            for key in clients:
+        # Create an account
+        elif op == '1':
+            # Client is already logged in
+            if client:
+                send_message(c_socket, 1, 0, f'Unable to create account: You are already logged in as {c_name}. Please exit (op code 0) and start a new client to log into a different account.')
+                continue
+            # Username is already registered
+            if msg in clients:
+                send_message(c_socket, 1, 0, 'Unable to create account: This username is already taken.')
+                continue
+            # Username is blank
+            if not msg:
+                send_message(c_socket, 1, 0, 'Unable to create account: Username cannot be blank.')
+                continue
+
+            c_name = msg
+            clients[c_name] = Client(c_name, c_socket, addr)
+            client = clients[c_name]
+            send_message(c_socket, 0, 0, f'Account created! Logged in as {c_name}.')
+       
+        # Log into existing account
+        elif op == '2':
+            # Client is already logged in
+            if client:
+                send_message(c_socket, 1, 0, f'Unable to login: You are already logged in as {c_name}. Please exit (op code 0) and start a new client to log into a different account.')
+                continue
+            # Username does not exist
+            if msg not in clients:
+                send_message(c_socket, 1, 0, 'Unable to login: This username does not exist. If you would like to create a new account, use op code 1.')
+                continue
+            # Client already active
+            if clients[msg].active:
+                send_message(c_socket, 1, 0, 'Unable to login: This user is already connected to the server.')
+                continue
+            
+            c_name = msg
+            client = clients[c_name]
+            client.set_socket_addr(c_socket, addr)
+            client.active = True
+            send_message(c_socket, 0, 0, f'Logged in as {c_name}.')
+            time.sleep(0.1)
+
+            # Send any undelivered messages 
+            for sender, msg in client.msgs:
+                send_message(client.socket, 0, 1, sender + '|' + msg)
+                print(f'{sender} sent {msg} to {c_name}')
+                time.sleep(0.1) # TODO: this is jank
+
+            client.clear_msgs()
+
+        # Send message to another client
+        elif op == '3':
+            # Must be logged in
+            if not client:
+                send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login (op code 2) or create an account (op code 1).')
+                continue
+            
+            msg = msg.split('|', 1)
+
+            # Validate parameters
+            if len(msg) < 2:
+                send_message(c_socket, 1, 0, 'Not enough parameters specified. To send a message to another user, please type 3|[recipient]|[message].')
+                continue
+
+            receiver = msg[0].strip()
+            msg = msg[1].strip()
+
+            if receiver not in clients:
+                send_message(c_socket, 1, 0, 'Recipient username cannot be found.')
+                continue
+            if receiver == c_name:
+                send_message(c_socket, 1, 0, 'Cannot send messages to yourself.')
+                continue
+            if msg == '':
+                send_message(c_socket, 1, 0, 'Cannot send blank message.')
+                continue
+            
+            # Send/Queue Message
+            receiver_client = clients[receiver]
+
+            if not receiver_client.socket:
+                receiver_client.queue_msg(c_name, msg) # TODO: lock things
+                send_message(c_socket, 0, 0, f'Message sent to {receiver}.')
+                print(f'{c_name} queued {msg} to {receiver}')
+            else:
+                send_message(receiver_client.socket, 0, 1, c_name + '|' + msg)
+                send_message(c_socket, 0, 0, f'Message sent to {receiver}.')
+                print(f'{c_name} sent {msg} to {receiver}')
+
+        # List accounts
+        elif op == '4':
+            accounts = '\n' 
+
+            for key in fnmatch.filter(clients.keys(), msg if msg else '*'):
                 accounts += '- ' + key + '\n'
 
-            c_socket.send(accounts.encode())
-            continue
+            send_message(c_socket, 0, 0, accounts)
+            
+        # Delete account
+        elif op == '5':
+            # Must be logged in
+            if not client:
+                send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login (op code 2) or create an account (op code 1).')
+                continue
 
-        msg = msg.rsplit('>', 1)
+            clients.pop(c_name) # TODO: maybe stuff with locks here
+            c_name = None
+            client = None
         
-        # Handle Invalid Inputs
-        if len(msg) < 2:
-            c_socket.send('ERROR: No recipient specified. To send a message to a user, please input your message followed by \'>\' and the recipient\'s username.\n'.encode())
-            continue
-
-        receiver = msg[1].strip()
-        msg = msg[0].strip()
-        
-        if receiver not in clients:
-            c_socket.send('ERROR: Recipient username cannot be found.\n'.encode())
-            continue
-        if receiver == c_name:
-            c_socket.send('ERROR: Cannot send messages to yourself.\n'.encode())
-            continue
-        if msg == '':
-            c_socket.send('ERROR: Cannot send blank message.\n'.encode())
-            continue
-
-        # Send/Queue Message
-        receiver_client = clients[receiver]
-
-        if not receiver_client.socket:
-            receiver_client.queue_msg(c_name, msg)
-            print(f'{c_name} queued {msg} to {receiver}')
+        # Request was malformed
         else:
-            receiver_client.socket.send((msg + '<' + c_name).encode())
-            print(f'{c_name} sent {msg} to {receiver}')
-
-    print(f'\n[-] {c_name} has left. Disconnecting client.\n')
-    client.disconnect()
+            send_message(c_socket, 1, 0, 'Invalid operation. Please input your request as [op code]|[params].')
+    
+    if (client):
+        print(f'\n[-] {c_name} has left. Disconnecting client.\n')
+        client.disconnect()
 
 
 def main():
@@ -117,30 +188,19 @@ def main():
 
         while True:
             c_socket, addr = s.accept()
-            c_name = c_socket.recv(1024).decode().strip()
 
-            # Client already exists
-            if c_name in clients:
-                # user is not already logged in - connect to server
-                if not clients[c_name].active:
-                    clients[c_name].set_socket_addr(c_socket, addr)
-                    clients[c_name].active = True
-                # user is already logged in - refuse connection
-                else:
-                    c_socket.send("You are already connected to this sever!".encode())
-                    continue
+            print(f'\n[+] Connected to {addr[0]} ({addr[1]})\n')
 
-            # New user
-            else:
-                clients[c_name] = Client(c_name, c_socket, addr)
-
-            c_socket.send("Connected!".encode())
-            t = Thread(target=on_new_client, args=(c_socket, addr, c_name))
+            t = Thread(target=on_new_client, args=(c_socket, addr))
             t.start()
 
     except KeyboardInterrupt:
-        # TODO: close all client sockets too
         print('\nServer closed with KeyboardInterrupt!')
+
+        for c in clients:
+            if clients[c].socket:
+                clients[c].socket.close()
+
         s.close()
 
 

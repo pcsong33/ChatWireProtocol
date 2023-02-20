@@ -1,41 +1,48 @@
 import time, socket, sys
 from threading import Thread
 
+MAX_REQUEST_LEN = 280
 
 # Background thread listens for incoming messages to print
 def receive_msgs(s):
+    # Messages send as [status][is_chat][msg]
     for msg in iter(lambda: s.recv(1024).decode(), ''):
-        msg = msg.rsplit('<', 1) 
+        status, is_chat, msg = ord(msg[0]), int(msg[1]), msg[2:]
 
-        # Message from the server (e.g. error message, list accounts)
-        if len(msg) < 2:
-            print(msg[0])
         # Message from another client
+        if is_chat:
+            msg = msg.split('|', 1)
+            sender = msg[0].strip()
+            msg = msg[1].strip()
+
+            print(f'\nMessage from {sender}: {msg}\n')
+        # Message from the server
         else:
-            sender = msg[1].strip()
-            msg = msg[0].strip()
+            if status == 0:
+                print(f'\nSUCCESS: {msg}\n')
+            elif status == 1:
+                print(f'\nERROR: {msg}\n')
 
-            print(f'{sender}: {msg}\n')
+# TODO: fix intro message
 
+# def print_intro_message():
+#     print(' -------------------------------------------------------------------------------------------------------------------')
+#     print('|                                             Welcome to the Chat Room!                                             |')
+#     print(' -------------------------------------------------------------------------------------------------------------------')
 
-def print_intro_message():
-    print(' -------------------------------------------------------------------------------------------------------------------')
-    print('|                                             Welcome to the Chat Room!                                             |')
-    print(' -------------------------------------------------------------------------------------------------------------------')
+#     print('INSTRUCTIONS: To send a message to a user, please input your message followed by \'>\' and the recipient\'s username.\n')
+#     print('For example:')
+#     print('Hello there, Bob! > bobs_username_123\n')
 
-    print('INSTRUCTIONS: To send a message to a user, please input your message followed by \'>\' and the recipient\'s username.\n')
-    print('For example:')
-    print('Hello there, Bob! > bobs_username_123\n')
+#     print('Messages will appear with the sender\'s username in front. For example: ')
+#     print('bob: Long time no see, Alice!\n')
 
-    print('Messages will appear with the sender\'s username in front. For example: ')
-    print('bob: Long time no see, Alice!\n')
+#     print('Enter LIST to list all accounts')
+#     print('Enter DELETE to delete your account')
 
-    print('Enter LIST to list all accounts')
-    print('Enter DELETE to delete your account')
+#     print('ENTER [e] TO EXIT\n')
 
-    print('ENTER [e] TO EXIT\n')
-
-    print(' -------------------------------------------------------------------------------------------------------------------')
+#     print(' -------------------------------------------------------------------------------------------------------------------')
 
 
 def main():
@@ -49,34 +56,32 @@ def main():
     # host = 'dhcp-10-250-203-22.harvard.edu'
     print(f'{host} ({ip})\n')
 
-    name = input('\nEnter your username: ')
     port = 1538
     print(f'\nTrying to connect to {host} ({port})\n')
     time.sleep(1)
     s.connect((host, port))
-    # print('Connected...\n')
-    s.send(name.encode())
-
-    connection_message = s.recv(1024).decode()
-    print(connection_message)
-    if connection_message != "Connected!":
-        return
+    print('Connected...\n')
 
     background_thread = Thread(target=receive_msgs, args=(s,))
     background_thread.daemon = True
     background_thread.start()
 
-    print_intro_message()
+    # print_intro_message()
 
     # Send message to the server to deliver to recipient
     while True:
-        msg = input()
-        s.send(msg.encode())
+        request = input()
 
-        if msg == '[e]':
-            break
+        if len(request) > MAX_REQUEST_LEN:
+            print('ERROR: Please limit requests to 280 characters.')
+            continue
 
-        if msg == 'DELETE':
+        s.send(request.encode()) # TODO: send with header?
+
+        op = request.split('|', 1)[0]
+
+        # Client is exiting 
+        if op == '0':
             break
 
 

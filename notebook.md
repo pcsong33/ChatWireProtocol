@@ -1,6 +1,24 @@
 
 # CS262 Engineering Notebook | Ashley Zhuang & Patrick Song
 
+## 2/19/2023
+I want to rewrite this so that the wire protocol is a lot cleaner and less prone to errors. Outline of what I'm thinking:
+
+Client-side:
+* Send message via [op]|[params]
+* ops: 0 = exit, 1 = create account (param: username), 2 = login (param: username), 3 = send message (params: recipient, username), 4 = list accounts (param: wildcard), 5 = delete account 
+
+Server-side:
+* Send message via [status code][indicator if chat/server msg][msg]
+    * status: 0 = success / no status, 1 = error
+* Possible server messages
+    * ~~Client is already active / logged in elsewhere~~
+    * ~~Successfully connected~~
+    * ~~Client's message is malformed - no op, or parameters are wrong~~
+    * ~~Recipient username not found~~
+    * ~~Attempting to send message to oneself~~
+    * ~~Blank message~~
+    * ~~Message is past character limit~~
 
 ## 2/15/2023
 
@@ -9,9 +27,13 @@ Ensured that multiple logins cannot occur. If the same user tries to login when 
 1. Check if the sender of queued msg is in the dictionary, in case their account has been deleted. 
 1. ~~Ensure multiple logins to an account cannot occur.~~
 1. Test the code a lottttt more, across multiple devices too. 
+    1. Character limits
+    1. Client dying
+    1. Queueing messages for the same client on diff threads (need locking?)
+    1. ~~Search via text wildcard~~
+    1. Need to send message lengths in buffers? might also fix the time sleeping for queueing stuff
 1. General code clean up and abstraction.
-
-
+1. Unit tests
 
 ## 2/12/2023
 
@@ -44,7 +66,7 @@ This probably requires threading, so that the server can accept multiple connect
 
 Next steps (brainstorm):
 1. Investigate why host name is appearing differently.
-1. Re-write code so that multiple clients can connect to server.
-1. For queue-ing messages for clients: keep a dictionary where key = existing username, value = (boolean connected, array [(message, sender)])
+1. ~~Re-write code so that multiple clients can connect to server.~~
+1. ~~For queue-ing messages for clients: keep a dictionary where key = existing username, value = (boolean connected, array [(message, sender)])~~
 1. When delivering an undelivered message, first check if the sender is in the dictionary, in case their account has been deleted.
-1. How to receive messages in a continuous stream? Right now not sure how to receive multiple messages without sending messages in between.
+1. ~~How to receive messages in a continuous stream? Right now not sure how to receive multiple messages without sending messages in between.~~
