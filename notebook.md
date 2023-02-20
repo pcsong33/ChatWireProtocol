@@ -4,17 +4,19 @@
 ## 2/20/2023
 * Made a fix so that when a client exits suddenly (e.g. ctrl c), the broken pipe error is caught and the client is disconnected.
 * I had something weird happen where I got a ConnectionResetError, but I wasn't able to reproduce it.
+    * I was able to reproduce this actually by sending a message from A to B and then exiting B abruptly, but I think I have fixed this error by catching ConnectionResetErrors, and also by adding a nested try-except block when a user A fails to send a message to user B who is presumably logged in and might've disconnected suddenly.
+* I also added a success message when undelivered messages have been sent, in case the user exits suddenly and the messages are cleared before everything has actually been printed.
 
 ## 2/19/2023
 I want to rewrite this so that the wire protocol is a lot cleaner and less prone to errors. Outline of what I'm thinking:
 
 Client-side:
 * Send message via [op]|[params]
-* ops: 0 = exit, 1 = create account (param: username), 2 = login (param: username), 3 = send message (params: recipient, username), 4 = list accounts (param: wildcard), 5 = delete account 
+* ops: 1 = create account (param: username), 2 = login (param: username), 3 = send message (params: recipient, username), 4 = list accounts (param: wildcard), 5 = delete account, 6 = exit
 
 Server-side:
 * Send message via [status code][indicator if chat/server msg][msg]
-    * status: 0 = success / no status, 1 = error
+    * status: 0 = success, 1 = error, 2 = note from server
 * Possible server messages
     * ~~Client is already active / logged in elsewhere~~
     * ~~Successfully connected~~

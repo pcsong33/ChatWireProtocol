@@ -1,6 +1,6 @@
 import time, socket, sys
 import fnmatch
-from threading import Thread
+import threading
 from collections import deque
 
 
@@ -9,8 +9,9 @@ class Client:
         self.name = name
         self.socket = socket
         self.addr = addr
-        self.msgs = []
         self.active = True
+        self.msgs = deque([])
+        self.lock = threading.Lock()
     
     def set_socket_addr(self, socket, addr):
         self.socket = socket
@@ -24,11 +25,12 @@ class Client:
         self.active = False
 
     def queue_msg(self, sender, msg):
-        self.msgs.append((sender, msg))
+        # Multiple clients on diff threads may attempt to queue msgs simultaneously
+        with self.lock:
+            self.msgs.append((sender, msg))
 
     def clear_msgs(self):
-        self.msgs = []
-
+        self.msgs = deque([])
 
 clients = {}
 
@@ -49,13 +51,9 @@ def on_new_client(c_socket, addr):
             request = c_socket.recv(1024).decode() # TODO: fix to have header?
             op, msg = request.split('|', 1) if '|' in request else (request, '')
             op, msg = op.strip(), msg.strip()
-            
-            # Exit the chat
-            if op == '0':
-                break
 
             # Create an account
-            elif op == '1':
+            if op == '1':
                 # Client is already logged in
                 if client:
                     send_message(c_socket, 1, 0, f'Unable to create account: You are already logged in as {c_name}. Please exit (op code 0) and start a new client to log into a different account.')
@@ -94,15 +92,19 @@ def on_new_client(c_socket, addr):
                 client.set_socket_addr(c_socket, addr)
                 client.active = True
                 send_message(c_socket, 0, 0, f'Logged in as {c_name}.')
-                time.sleep(0.1)
+                time.sleep(0.0001)
 
                 # Send any undelivered messages 
-                for sender, msg in client.msgs:
-                    send_message(client.socket, 0, 1, sender + '|' + msg)
-                    print(f'{sender} sent {msg} to {c_name}')
-                    time.sleep(0.1) # TODO: this is jank
+                if (len(client.msgs) > 0):
+                    for sender, queued_msg in client.msgs:
+                        send_message(c_socket, 0, 1, sender + '|' + queued_msg)
+                        print(f'{sender} sent {queued_msg} to {c_name}')
+                        time.sleep(0.0001) # TODO: this is jank
 
-                client.clear_msgs()
+                    send_message(c_socket, 2, 0, 'Messages you missed while you were away have been delivered above.')
+                    client.clear_msgs()
+                else:
+                     send_message(c_socket, 2, 0, 'No new messages since you\'ve been gone.')
 
             # Send message to another client
             elif op == '3':
@@ -135,13 +137,18 @@ def on_new_client(c_socket, addr):
                 receiver_client = clients[receiver]
 
                 if not receiver_client.socket:
-                    receiver_client.queue_msg(c_name, msg) # TODO: lock things
+                    receiver_client.queue_msg(c_name, msg)
                     send_message(c_socket, 0, 0, f'Message sent to {receiver}.')
                     print(f'{c_name} queued {msg} to {receiver}')
                 else:
-                    send_message(receiver_client.socket, 0, 1, c_name + '|' + msg)
-                    send_message(c_socket, 0, 0, f'Message sent to {receiver}.')
-                    print(f'{c_name} sent {msg} to {receiver}')
+                    try:
+                        send_message(receiver_client.socket, 0, 1, c_name + '|' + msg)
+                        send_message(c_socket, 0, 0, f'Message sent to {receiver}.')
+                        print(f'{c_name} sent {msg} to {receiver}')
+                    except BrokenPipeError:
+                        send_message(c_socket, 1, 0, f'Message could not be sent to {receiver}. Please try again.')
+                        print(f'\n[-] Connection with {receiver_client.name} has broken. Disconnecting client.\n')
+                        receiver_client.disconnect()
 
             # List accounts
             elif op == '4':
@@ -159,9 +166,13 @@ def on_new_client(c_socket, addr):
                     send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login (op code 2) or create an account (op code 1).')
                     continue
 
-                clients.pop(c_name) # TODO: maybe stuff with locks here
+                clients.pop(c_name) # TODO: maybe need stuff with locks here?
                 c_name = None
                 client = None
+
+            # Exit the chat
+            if op == '6':
+                break
             
             # Request was malformed
             else:
@@ -171,7 +182,7 @@ def on_new_client(c_socket, addr):
             print(f'\n[-] {c_name} has left. Disconnecting client.\n')
             client.disconnect()
 
-    except BrokenPipeError:
+    except (BrokenPipeError, ConnectionResetError) as e:
         if (client):
             print(f'\n[-] Connection with {c_name} has broken. Disconnecting client.\n')
             client.disconnect()
@@ -196,7 +207,7 @@ def main():
 
             print(f'\n[+] Connected to {addr[0]} ({addr[1]})\n')
 
-            t = Thread(target=on_new_client, args=(c_socket, addr))
+            t = threading.Thread(target=on_new_client, args=(c_socket, addr))
             t.start()
 
     except KeyboardInterrupt:

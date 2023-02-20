@@ -22,6 +22,8 @@ def receive_msgs(s):
                 print(f'\nSUCCESS: {msg}\n')
             elif status == 1:
                 print(f'\nERROR: {msg}\n')
+            elif status == 2:
+                print(f'\nSERVER: {msg}\n')
 
 # TODO: fix intro message
 
@@ -81,7 +83,7 @@ def main():
         op = request.split('|', 1)[0]
 
         # Client is exiting 
-        if op == '0':
+        if op == '6':
             break
 
 
