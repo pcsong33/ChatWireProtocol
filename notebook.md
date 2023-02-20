@@ -1,5 +1,5 @@
 
-# CS262 Engineering Notebook | Ashley Zhuang & Patrick Song
+# CS262 Engineering Notebook
 
 ## 2/20/2023
 * Made a fix so that when a client exits suddenly (e.g. ctrl c), the broken pipe error is caught and the client is disconnected.

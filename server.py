@@ -1,7 +1,6 @@
 import time, socket
 import fnmatch
 import threading
-from collections import deque
 
 PORT = 1538
 
@@ -11,7 +10,7 @@ class Client:
         self.socket = socket
         self.addr = addr
         self.active = True
-        self.msgs = deque([])
+        self.msgs = []
         self.lock = threading.Lock()
     
     def set_socket_addr(self, socket, addr):
@@ -31,7 +30,7 @@ class Client:
             self.msgs.append((sender, msg))
 
     def clear_msgs(self):
-        self.msgs = deque([])
+        self.msgs = []
 
 clients = {}
 
