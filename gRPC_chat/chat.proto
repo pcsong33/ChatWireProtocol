@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package chat;
+
+message Note {
+    string sender = 1;
+    string message = 2;
+}
+
+message Empty {}
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+//  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc ValidateUser (UserName) returns (UserValidation) {}
+  rpc ChatStream (UserName) returns (stream Note);
+  rpc SendNote (Note) returns (Empty);
+}
+
+// The request message containing the user's name.
+message UserName {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message UserValidation {
+  bool message = 1;
+}
+
