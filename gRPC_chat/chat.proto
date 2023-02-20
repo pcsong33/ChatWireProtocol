@@ -7,6 +7,19 @@ message Note {
     string message = 2;
 }
 
+message ClientRequest {
+  OpType op = 1;
+
+  enum OpType {
+    CREATE = 1;
+    LOGIN = 2;
+    SEND = 3;
+    LIST = 4;
+    DELETE = 5;
+    EXIT = 6;
+  }
+}
+
 message Empty {}
 
 // The greeting service definition.
