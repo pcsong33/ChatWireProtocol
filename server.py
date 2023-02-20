@@ -56,7 +56,7 @@ def on_new_client(c_socket, addr):
             if op == '1':
                 # Client is already logged in
                 if client:
-                    send_message(c_socket, 1, 0, f'Unable to create account: You are already logged in as {c_name}. Please exit (op code 0) and start a new client to log into a different account.')
+                    send_message(c_socket, 1, 0, f'Unable to create account: You are already logged in as {c_name}. Please exit and start a new client to log into a different account.')
                     continue
                 # Username is already registered
                 if msg in clients:
@@ -76,11 +76,11 @@ def on_new_client(c_socket, addr):
             elif op == '2':
                 # Client is already logged in
                 if client:
-                    send_message(c_socket, 1, 0, f'Unable to login: You are already logged in as {c_name}. Please exit (op code 0) and start a new client to log into a different account.')
+                    send_message(c_socket, 1, 0, f'Unable to login: You are already logged in as {c_name}. Please exit  and start a new client to log into a different account.')
                     continue
                 # Username does not exist
                 if msg not in clients:
-                    send_message(c_socket, 1, 0, 'Unable to login: This username does not exist. If you would like to create a new account, use op code 1.')
+                    send_message(c_socket, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
                     continue
                 # Client already active
                 if clients[msg].active:
@@ -110,7 +110,7 @@ def on_new_client(c_socket, addr):
             elif op == '3':
                 # Must be logged in
                 if not client:
-                    send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login (op code 2) or create an account (op code 1).')
+                    send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login or create an account.')
                     continue
                 
                 msg = msg.split('|', 1)
@@ -163,7 +163,7 @@ def on_new_client(c_socket, addr):
             elif op == '5':
                 # Must be logged in
                 if not client:
-                    send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login (op code 2) or create an account (op code 1).')
+                    send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login or create an account.')
                     continue
 
                 clients.pop(c_name) # TODO: maybe need stuff with locks here?
@@ -171,12 +171,12 @@ def on_new_client(c_socket, addr):
                 client = None
 
             # Exit the chat
-            if op == '6':
+            elif op == '6':
                 break
             
             # Request was malformed
             else:
-                send_message(c_socket, 1, 0, 'Invalid operation. Please input your request as [op code]|[params].')
+                send_message(c_socket, 1, 0, 'Invalid operation. Please input your request as [operation]|[params].')
         
         if (client):
             print(f'\n[-] {c_name} has left. Disconnecting client.\n')

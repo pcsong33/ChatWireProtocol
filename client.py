@@ -3,6 +3,15 @@ from threading import Thread
 
 MAX_REQUEST_LEN = 280
 
+OP_TO_OPCODE = {
+    'create': '1',
+    'login': '2',
+    'send': '3',
+    'list': '4',
+    'delete': '5',
+    'exit': '6'
+}
+
 # Background thread listens for incoming messages to print
 def receive_msgs(s):
     # Messages send as [status][is_chat][msg]
@@ -23,7 +32,7 @@ def receive_msgs(s):
             elif status == 1:
                 print(f'\nERROR: {msg}\n')
             elif status == 2:
-                print(f'\nSERVER: {msg}\n')
+                print(f'\nSERVER MESSAGE: {msg}\n')
 
 # TODO: fix intro message
 
@@ -74,16 +83,25 @@ def main():
     while True:
         request = input()
 
+        # Limit request length
         if len(request) > MAX_REQUEST_LEN:
-            print('ERROR: Please limit requests to 280 characters.')
+            print('\nINPUT ERROR: Please limit requests to 280 characters.\n')
             continue
 
-        s.send(request.encode()) # TODO: send with header?
+        op, msg = request.split('|', 1) if '|' in request else (request, '')
+        op, msg = op.strip(), msg.strip()
 
-        op = request.split('|', 1)[0]
+        # Operation does not exist
+        if op not in OP_TO_OPCODE:
+            print('\nINPUT ERROR: Invalid operation. Please input your request as [operation]|[params].\n')
+            continue
+
+        opcode = OP_TO_OPCODE[op]
+        encoded_request = (opcode + '|' + msg).encode() # TODO: send with header?
+        s.send(encoded_request) 
 
         # Client is exiting 
-        if op == '6':
+        if op == 'exit':
             break
 
 
