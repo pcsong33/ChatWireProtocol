@@ -1,6 +1,10 @@
 
 # CS262 Engineering Notebook | Ashley Zhuang & Patrick Song
 
+## 2/20/2023
+* Made a fix so that when a client exits suddenly (e.g. ctrl c), the broken pipe error is caught and the client is disconnected.
+* I had something weird happen where I got a ConnectionResetError, but I wasn't able to reproduce it.
+
 ## 2/19/2023
 I want to rewrite this so that the wire protocol is a lot cleaner and less prone to errors. Outline of what I'm thinking:
 
