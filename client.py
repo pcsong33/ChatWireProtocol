@@ -1,5 +1,8 @@
-import time, socket, sys
+import time, socket
 from threading import Thread
+
+HOST = 'dhcp-10-250-203-22.harvard.edu'
+PORT = 1538
 
 MAX_REQUEST_LEN = 280
 
@@ -62,15 +65,10 @@ def main():
     time.sleep(1)
 
     s = socket.socket()
-    host = socket.gethostname()
-    ip = socket.gethostbyname(host)
-    # host = 'dhcp-10-250-203-22.harvard.edu'
-    print(f'{host} ({ip})\n')
 
-    port = 1538
-    print(f'\nTrying to connect to {host} ({port})\n')
+    print(f'\nTrying to connect to {HOST} ({PORT})\n')
     time.sleep(1)
-    s.connect((host, port))
+    s.connect((HOST, PORT))
     print('Connected...\n')
 
     background_thread = Thread(target=receive_msgs, args=(s,))
@@ -95,6 +93,21 @@ def main():
         if op not in OP_TO_OPCODE:
             print('\nINPUT ERROR: Invalid operation. Please input your request as [operation]|[params].\n')
             continue
+
+        # Validate parameters
+        if op == 'create' or op == 'login':
+            if not msg:
+                print('\nINPUT ERROR: Unable to create account: Username cannot be blank.\n')
+                continue
+        elif op == 'send':
+            msg_params = msg.split('|', 1)
+            if len(msg_params) < 2:
+                print('\nINPUT ERROR: Not enough parameters specified. To send a message to another user, please type 3|[recipient]|[message].\n')
+                continue
+            if msg_params[1].strip() == '':
+                print('\nINPUT ERROR: Message cannot be blank.\n')
+                continue
+
 
         opcode = OP_TO_OPCODE[op]
         encoded_request = (opcode + '|' + msg).encode() # TODO: send with header?

@@ -1,8 +1,9 @@
-import time, socket, sys
+import time, socket
 import fnmatch
 import threading
 from collections import deque
 
+PORT = 1538
 
 class Client:
     def __init__(self, name, socket=None, addr=None):
@@ -62,10 +63,6 @@ def on_new_client(c_socket, addr):
                 if msg in clients:
                     send_message(c_socket, 1, 0, 'Unable to create account: This username is already taken.')
                     continue
-                # Username is blank
-                if not msg:
-                    send_message(c_socket, 1, 0, 'Unable to create account: Username cannot be blank.')
-                    continue
 
                 c_name = msg
                 clients[c_name] = Client(c_name, c_socket, addr)
@@ -115,22 +112,15 @@ def on_new_client(c_socket, addr):
                 
                 msg = msg.split('|', 1)
 
-                # Validate parameters
-                if len(msg) < 2:
-                    send_message(c_socket, 1, 0, 'Not enough parameters specified. To send a message to another user, please type 3|[recipient]|[message].')
-                    continue
-
                 receiver = msg[0].strip()
                 msg = msg[1].strip()
 
+                # Validate recipient
                 if receiver not in clients:
                     send_message(c_socket, 1, 0, 'Recipient username cannot be found.')
                     continue
                 if receiver == c_name:
                     send_message(c_socket, 1, 0, 'Cannot send messages to yourself.')
-                    continue
-                if msg == '':
-                    send_message(c_socket, 1, 0, 'Cannot send blank message.')
                     continue
                 
                 # Send/Queue Message
@@ -191,12 +181,11 @@ def main():
     try:
         s = socket.socket()
         host = socket.gethostname()
-        # host = "dhcp-10-250-203-22.harvard.edu"
         ip = socket.gethostbyname(host)
-        port = 1538
+
         print(f'\n{host} ({ip})')
 
-        s.bind((host, port))
+        s.bind((host, PORT))
         print('\nServer started!')
 
         s.listen(5)
