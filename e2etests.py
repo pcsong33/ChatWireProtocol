@@ -261,6 +261,7 @@ class ChatAppTest(unittest.TestCase):
 
         c.sock.close()
 
+    # Test invalid chat inputs
     def test_send_chat_invalid(self):
         # Attempt to send message before logged in
         client1 = client.Client(host=HOST)
@@ -286,6 +287,7 @@ class ChatAppTest(unittest.TestCase):
         client1.pack_and_send_request('delete|bob')
         client1.sock.close()
 
+    # Sending chat to someone who is logged in
     def test_send_chat_live(self):
         # Create bob, alice, and eve
         client1 = client.Client(host=HOST)
@@ -321,6 +323,7 @@ class ChatAppTest(unittest.TestCase):
         client2.sock.close()
         client3.sock.close()
 
+    # Queueing messages to someone inactive
     def test_send_chat_queue(self):
          # Create bob, alice, and eve
         client1 = client.Client(host=HOST)
@@ -363,7 +366,6 @@ class ChatAppTest(unittest.TestCase):
         client1.sock.close()
         client2.sock.close()
         client3.sock.close()
-
 
 class NoPrint(object):
     def __init__(self,stdout = None, stderr = None):

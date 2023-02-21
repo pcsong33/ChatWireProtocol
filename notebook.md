@@ -7,6 +7,7 @@
     * I was able to reproduce this actually by sending a message from A to B and then exiting B abruptly, but I think I have fixed this error by catching ConnectionResetErrors, and also by adding a nested try-except block when a user A fails to send a message to user B who is presumably logged in and might've disconnected suddenly.
 * I also added a success message when undelivered messages have been sent, in case the user exits suddenly and the messages are cleared before everything has actually been printed.
 * Refactored all of the code so that the client and server files are classes now. 
+* Wrote comprehensive end-to-end tests that test the functionality of the client-side request validations and the request-handling on the server-side.
 
 ## 2/19/2023
 I want to rewrite this so that the wire protocol is a lot cleaner and less prone to errors. Outline of what I'm thinking:
@@ -31,7 +32,7 @@ Server-side:
 
 Ensured that multiple logins cannot occur. If the same user tries to login when they are already connected to the server, the program will exit gracefully. I added a `.active` attribute to the client class to check for connection status. Also, did some code clean-up, moving code into main() functions for both client and server files.
 1. ~~Investigate why host name is appearing differently.~~
-1. Check if the sender of queued msg is in the dictionary, in case their account has been deleted. 
+1. ~~Check if the sender of queued msg is in the dictionary, in case their account has been deleted. ~~
 1. ~~Ensure multiple logins to an account cannot occur.~~
 1. Test the code a lottttt more, across multiple devices too. 
     1. ~~Character limits~~

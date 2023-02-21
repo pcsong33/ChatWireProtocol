@@ -99,7 +99,10 @@ class Server:
             return 0
 
         for sender, queued_msg in client.msgs:
-            self.send_message(c_socket, 0, 1, sender + '|' + queued_msg)
+            deleted_flag = ""
+            if sender not in self.clients:
+                deleted_flag = " [deleted]"
+            self.send_message(c_socket, 0, 1, sender + deleted_flag + '|' + queued_msg)
             print(f'{sender} sent {queued_msg} to {c_name}')
             time.sleep(0.0001) # TODO: this is jank
 
