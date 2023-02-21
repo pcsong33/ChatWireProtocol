@@ -62,6 +62,7 @@ class Server:
             self.clients[name] = ClientModel(name, c_socket, addr)
 
         self.send_message(c_socket, 0, 0, f'Account created! Logged in as {name}.')
+        print(f'{name} has created an account.')
         return 0
 
     # Op 2 - Login
@@ -86,6 +87,7 @@ class Server:
             self.clients[name].active = True
 
         self.send_message(c_socket, 0, 0, f'Logged in as {name}.')
+        print(f'{name} is logged in.')
         return 0
 
     # Upon login, send messages user missed

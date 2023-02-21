@@ -29,7 +29,7 @@ Server-side:
 ## 2/15/2023
 
 Ensured that multiple logins cannot occur. If the same user tries to login when they are already connected to the server, the program will exit gracefully. I added a `.active` attribute to the client class to check for connection status. Also, did some code clean-up, moving code into main() functions for both client and server files.
-1. Investigate why host name is appearing differently.
+1. ~~Investigate why host name is appearing differently.~~
 1. Check if the sender of queued msg is in the dictionary, in case their account has been deleted. 
 1. ~~Ensure multiple logins to an account cannot occur.~~
 1. Test the code a lottttt more, across multiple devices too. 
