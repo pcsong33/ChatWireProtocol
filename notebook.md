@@ -6,6 +6,7 @@
 * I had something weird happen where I got a ConnectionResetError, but I wasn't able to reproduce it.
     * I was able to reproduce this actually by sending a message from A to B and then exiting B abruptly, but I think I have fixed this error by catching ConnectionResetErrors, and also by adding a nested try-except block when a user A fails to send a message to user B who is presumably logged in and might've disconnected suddenly.
 * I also added a success message when undelivered messages have been sent, in case the user exits suddenly and the messages are cleared before everything has actually been printed.
+* Refactored all of the code so that the client and server files are classes now. 
 
 ## 2/19/2023
 I want to rewrite this so that the wire protocol is a lot cleaner and less prone to errors. Outline of what I'm thinking:
@@ -33,12 +34,13 @@ Ensured that multiple logins cannot occur. If the same user tries to login when 
 1. Check if the sender of queued msg is in the dictionary, in case their account has been deleted. 
 1. ~~Ensure multiple logins to an account cannot occur.~~
 1. Test the code a lottttt more, across multiple devices too. 
-    1. Character limits
-    1. Client dying
-    1. Queueing messages for the same client on diff threads (need locking?)
+    1. ~~Character limits~~
+    1. ~~Client dying~~
+    1. ~~Queueing messages for the same client on diff threads (need locking?)~~
     1. ~~Search via text wildcard~~
     1. Need to send message lengths in buffers? might also fix the time sleeping for queueing stuff
-1. General code clean up and abstraction.
+    1. Message from someone who was deleted
+1. ~~General code clean up and abstraction.~~
 1. Unit tests
 
 ## 2/12/2023

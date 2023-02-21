@@ -199,7 +199,7 @@ class Server:
                     
                     with self.lock:
                         self.clients.pop(c_name)
-                        self.send_message(c_socket, 1, 0, f'Account {c_name} has been deleted. You are now logged out.')
+                        self.send_message(c_socket, 0, 0, f'Account {c_name} has been deleted. You are now logged out.')
 
                     print(f'{c_name} has deleted their account.')
                     c_name = None
