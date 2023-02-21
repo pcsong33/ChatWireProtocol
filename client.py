@@ -14,7 +14,7 @@ OP_TO_OPCODE = {
 
 class Client:
     def __init__(self, host='dhcp-10-250-203-22.harvard.edu', port=1538):
-        self.s = socket.socket()
+        self.sock = socket.socket()
         self.host = host
         self.port = port
 
@@ -34,9 +34,9 @@ class Client:
         print(' --------------------------------------------------------------------------------------------------------------------')
     
     # For background thread that listens for incoming messages to print
-    def receive_msgs(self, s):
+    def receive_msgs(self, sock):
         # Messages send as [status][is_chat][msg]
-        for msg in iter(lambda: s.recv(1024).decode(), ''):
+        for msg in iter(lambda: sock.recv(1024).decode(), ''):
             status, is_chat, msg = ord(msg[0]), int(msg[1]), msg[2:]
 
             # Message from another client
@@ -93,7 +93,7 @@ class Client:
 
         opcode = OP_TO_OPCODE[op]
         encoded_request = (opcode + '|' + msg).encode() # TODO: send with header?
-        self.s.send(encoded_request) 
+        self.sock.send(encoded_request) 
 
     # Main execution for communicating with chat server
     def connect_to_server(self):
@@ -103,10 +103,10 @@ class Client:
 
         print(f'\nTrying to connect to {self.host} ({self.port})\n')
         time.sleep(1)
-        self.s.connect((self.host, self.port))
+        self.sock.connect((self.host, self.port))
         print('Connected...\n')
 
-        background_thread = Thread(target=self.receive_msgs, args=(self.s,))
+        background_thread = Thread(target=self.receive_msgs, args=(self.sock,))
         background_thread.daemon = True
         background_thread.start()
 
