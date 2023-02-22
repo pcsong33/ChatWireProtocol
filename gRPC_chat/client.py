@@ -184,6 +184,7 @@ class Client:
                     # Client is exiting
                     if status == 2:
                         self.channel.close()
+                        time.sleep(0.2)
                         break
 
             except KeyboardInterrupt:
