@@ -27,7 +27,7 @@ The client file would spin up a background thread to listen for and print messag
    * These performance differences are likely due to the fact that the Wire Protocol relies on socket level connections, which is much lower-level and requires
     less overhead than the gRPC model. While the Wire Protocol may be more efficient for shorter chat communications, gRPC will likely perform better when larger data formats are 
    being sent over the network, as gRPC's utilization of protocol buffers allows for fast parsing and accessing of data. Given that all chat messages were capped at 280 characters, our tests did not cover scenarios where the chat messages contained large amounts of data.
-3. **Buffer Sizes**: INSERT BUFFER SIZE FOR WIRE PROTOCOL HERE. By default, the maximum incoming message size on gRPC is 4 mb. Outgoing server-to-client messages do not have a message limit. 
+3. **Buffer Sizes**: For our wire protocol, the maximum incoming message from client to server size is 280 bytes, since messages are limited to 280 characters. Outgoing server-to-client messages again do not have a message limit, though the header is fixed at 3-bytes long. By default, the maximum incoming message size on gRPC is 4 mb. Outgoing server-to-client messages again do not have a message limit. 
 
 ## 2/21/2023
 Final TODO list
