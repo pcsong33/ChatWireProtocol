@@ -1,7 +1,7 @@
 import unittest, client, threading, time, sys, os
 from random import randint
 
-# TO RUN THESE TESTS, YOU MUST 1) run server.py, 2) change HOST to match the host of the server, and finally 3) run python e2etests.py
+# TO RUN THESE TESTS, YOU MUST 1) run server.py, 2) change HOST to match the host of the server, and finally 3) run python tests.py
 
 HOST = 'dhcp-10-250-203-22.harvard.edu'
     

@@ -1,4 +1,4 @@
-import time, socket
+import socket
 import fnmatch
 import threading
 
