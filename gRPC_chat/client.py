@@ -7,6 +7,10 @@ from threading import Thread
 
 MAX_REQUEST_LEN = 280
 
+# Change this below to match the server host
+HOST = 'dhcp-10-250-203-22.harvard.edu'
+
+# Dictionary that converts user-input operations to wire protocol operations
 OP_TO_OPCODE = {
     'create': '1',
     'login': '2',
@@ -16,12 +20,17 @@ OP_TO_OPCODE = {
     'exit': '6'
 }
 
-
+'''
+The Client object connects to the server running the chat application. It listens for incoming messages from 
+the server. It also takes in requests from the user via command-line input and calls stub functions to communicate
+with the server.
+'''
 class Client:
     def __init__(self):
         self.conn = None
         self.name = None
         self.channel = None
+        self.thread = None
 
     def print_intro_message(self):
         print(
@@ -43,6 +52,7 @@ class Client:
         print(
             ' --------------------------------------------------------------------------------------------------------------------')
 
+    # Method to receive client-to-client messages.
     def receive_msgs(self):
         msgs = self.conn.ChatStream(chat_pb2.UserName(name=self.name))
         if msgs:
@@ -53,7 +63,8 @@ class Client:
                 else:
                     print(f'{note.sender}: {note.message}')
 
-
+    # Parses through user input and validates a request. Once request had been verified,
+    # calls a stub function and connects to the server
     def validate_request(self, request):
         # Length limit
         if len(request) > MAX_REQUEST_LEN:
@@ -87,11 +98,17 @@ class Client:
                     print(f'You are already logged in as {self.name}. Please exit and start a new client to log into a different account.')
                     return 1
                 res = self.conn.Login(chat_pb2.UserName(name=msg))
+
+            if res.status == 1:
+                print(res.message)
+                return 1
+
+            else:
                 self.name = msg
 
-            background_thread = Thread(target=self.receive_msgs)
-            background_thread.daemon = True
-            background_thread.start()
+            self.thread = Thread(target=self.receive_msgs)
+            self.thread.daemon = True
+            self.thread.start()
             print(res.message)
 
         elif op == 'list':
@@ -126,7 +143,7 @@ class Client:
             if msg_params[0] == self.name:
                 print('ERROR: Cannot send messages to yourself.\n')
                 return 1
-            if msg_params[1]  == "":
+            if msg_params[1] == "":
                 print('ERROR: Cannot send blank messages.\n')
 
             note = chat_pb2.Note(
@@ -142,34 +159,40 @@ class Client:
         print('\nWelcome to Chat Room\n')
         print('Initialising....\n')
         time.sleep(1)
-        host = socket.gethostname()
-        # host = 'dhcp-10-250-203-22.harvard.edu'
         port = 1539
-        print(f'\nTrying to connect to {host} ({port})\n')
+        print(f'\nTrying to connect to {HOST} ({port})\n')
 
-        with grpc.insecure_channel(f'{host}:{port}') as channel:
+        with grpc.insecure_channel(f'{HOST}:{port}') as channel:
             # Connect to server via gRPC
             connection = chat_pb2_grpc.GreeterStub(channel)
             self.conn = connection
             self.channel = channel
             print('Connected...\n')
+            self.print_intro_message()
 
             # Send message to the server to deliver to recipient
-            while True:
-                request = input()
+            try:
+                while True:
+                    request = input()
 
-                status = self.validate_request(request)
+                    status = self.validate_request(request)
 
-                # Continue if request is invalid
-                if status == 1:
-                    continue
+                    # Continue if request is invalid
+                    if status == 1:
+                        continue
 
-                # Client is exiting
-                if status == 2:
-                    channel.close()
-                    break
+                    # Client is exiting
+                    if status == 2:
+                        self.channel.close()
+                        break
 
-            return
+            except KeyboardInterrupt:
+                if self.name:
+                    self.conn.Disconnect(chat_pb2.UserName(name=self.name))
+                    self.channel.close()
+                self.thread.join()
+
+
 
 
 if __name__ == "__main__":
