@@ -1,6 +1,18 @@
 
 # CS262 Engineering Notebook
 
+## 2/21/2023
+Final TODO list
+* ~~make folders~~
+* make readme
+    * how to actually run the app + pip requirements for grpc
+    * what exactly is the wire protocol
+    * file structure / high level overview of functions?
+* docstrings
+* combine notebooks
+    * Add to your notebook comparisons over the complexity of the code, any performance differences, and the size of the buffers being sent back and forth between the client and the server. 
+* grpc tests
+
 ## 2/20/2023
 * Made a fix so that when a client exits suddenly (e.g. ctrl c), the broken pipe error is caught and the client is disconnected.
 * I had something weird happen where I got a ConnectionResetError, but I wasn't able to reproduce it.
