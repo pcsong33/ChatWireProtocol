@@ -76,11 +76,14 @@ class Client:
                 return 1
 
             if op == 'create':
+                if self.name:
+                    print(f'Unable to create account: You are already logged in as {self.name}')
+                    return 1
                 res = self.conn.CreateAccount(chat_pb2.UserName(name=msg))
                 self.name = msg
 
             if op == 'login':
-                if self.name == msg:
+                if self.name:
                     print(f'You are already logged in as {self.name}. Please exit and start a new client to log into a different account.')
                     return 1
                 res = self.conn.Login(chat_pb2.UserName(name=msg))
@@ -106,8 +109,7 @@ class Client:
 
         elif op == 'exit':
             if self.name:
-                self.conn.Exit(chat_pb2.UserName(name=self.name))
-                self.name = None
+                self.conn.Disconnect(chat_pb2.UserName(name=self.name))
             return 2
 
         elif op == 'send':
@@ -132,13 +134,16 @@ class Client:
                 recipient=msg_params[0],
                 message=msg_params[1]
             )
-            self.conn.SendNote(note)
+            response = self.conn.SendNote(note)
+            if response.status:
+                print(response.message)
 
     def connect_to_server(self):
         print('\nWelcome to Chat Room\n')
         print('Initialising....\n')
         time.sleep(1)
         host = socket.gethostname()
+        # host = 'dhcp-10-250-203-22.harvard.edu'
         port = 1539
         print(f'\nTrying to connect to {host} ({port})\n')
 
@@ -163,6 +168,8 @@ class Client:
                 if status == 2:
                     channel.close()
                     break
+
+            return
 
 
 if __name__ == "__main__":

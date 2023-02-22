@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nchat.proto\x12\x04\x63hat\":\n\x04Note\x12\x0e\n\x06sender\x18\x01 \x01(\t\x12\x11\n\trecipient\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"\x19\n\x06String\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x82\x01\n\rClientRequest\x12&\n\x02op\x18\x01 \x01(\x0e\x32\x1a.chat.ClientRequest.OpType\"I\n\x06OpType\x12\n\n\x06\x43REATE\x10\x00\x12\t\n\x05LOGIN\x10\x01\x12\x08\n\x04SEND\x10\x02\x12\x08\n\x04LIST\x10\x03\x12\n\n\x06\x44\x45LETE\x10\x04\x12\x08\n\x04\x45XIT\x10\x05\"\x86\x01\n\rMessageStatus\x12*\n\x06status\x18\x01 \x01(\x0e\x32\x1a.chat.MessageStatus.Status\"I\n\x06Status\x12\n\n\x06\x43REATE\x10\x00\x12\t\n\x05LOGIN\x10\x01\x12\x08\n\x04SEND\x10\x02\x12\x08\n\x04LIST\x10\x03\x12\n\n\x06\x44\x45LETE\x10\x04\x12\x08\n\x04\x45XIT\x10\x05\"\x07\n\x05\x45mpty\"\x18\n\x08UserName\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\x0eUserValidation\x12\x0f\n\x07message\x18\x01 \x01(\x08\x32\xef\x02\n\x07Greeter\x12\x36\n\x0cValidateUser\x12\x0e.chat.UserName\x1a\x14.chat.UserValidation\"\x00\x12*\n\nChatStream\x12\x0e.chat.UserName\x1a\n.chat.Note0\x01\x12#\n\x08SendNote\x12\n.chat.Note\x1a\x0b.chat.Empty\x12*\n\x0cListAccounts\x12\x0c.chat.String\x1a\x0c.chat.String\x12-\n\rDeleteAccount\x12\x0e.chat.UserName\x1a\x0c.chat.String\x12-\n\rCreateAccount\x12\x0e.chat.UserName\x1a\x0c.chat.String\x12%\n\x05Login\x12\x0e.chat.UserName\x1a\x0c.chat.String\x12*\n\nDisconnect\x12\x0e.chat.UserName\x1a\x0c.chat.Stringb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nchat.proto\x12\x04\x63hat\":\n\x04Note\x12\x0e\n\x06sender\x18\x01 \x01(\t\x12\x11\n\trecipient\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\";\n\x08Response\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x12\x0e\n\x06sender\x18\x03 \x01(\x05\"\x19\n\x06String\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x07\n\x05\x45mpty\"\x18\n\x08UserName\x12\x0c\n\x04name\x18\x01 \x01(\t\"!\n\x0eUserValidation\x12\x0f\n\x07message\x18\x01 \x01(\x08\x32\xfc\x02\n\x07Greeter\x12\x36\n\x0cValidateUser\x12\x0e.chat.UserName\x1a\x14.chat.UserValidation\"\x00\x12*\n\nChatStream\x12\x0e.chat.UserName\x1a\n.chat.Note0\x01\x12&\n\x08SendNote\x12\n.chat.Note\x1a\x0e.chat.Response\x12,\n\x0cListAccounts\x12\x0c.chat.String\x1a\x0e.chat.Response\x12/\n\rDeleteAccount\x12\x0e.chat.UserName\x1a\x0e.chat.Response\x12/\n\rCreateAccount\x12\x0e.chat.UserName\x1a\x0e.chat.Response\x12\'\n\x05Login\x12\x0e.chat.UserName\x1a\x0e.chat.Response\x12,\n\nDisconnect\x12\x0e.chat.UserName\x1a\x0e.chat.Responseb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'chat_pb2', globals())
@@ -22,22 +22,16 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _NOTE._serialized_start=20
   _NOTE._serialized_end=78
-  _STRING._serialized_start=80
-  _STRING._serialized_end=105
-  _CLIENTREQUEST._serialized_start=108
-  _CLIENTREQUEST._serialized_end=238
-  _CLIENTREQUEST_OPTYPE._serialized_start=165
-  _CLIENTREQUEST_OPTYPE._serialized_end=238
-  _MESSAGESTATUS._serialized_start=241
-  _MESSAGESTATUS._serialized_end=375
-  _MESSAGESTATUS_STATUS._serialized_start=302
-  _MESSAGESTATUS_STATUS._serialized_end=375
-  _EMPTY._serialized_start=377
-  _EMPTY._serialized_end=384
-  _USERNAME._serialized_start=386
-  _USERNAME._serialized_end=410
-  _USERVALIDATION._serialized_start=412
-  _USERVALIDATION._serialized_end=445
-  _GREETER._serialized_start=448
-  _GREETER._serialized_end=815
+  _RESPONSE._serialized_start=80
+  _RESPONSE._serialized_end=139
+  _STRING._serialized_start=141
+  _STRING._serialized_end=166
+  _EMPTY._serialized_start=168
+  _EMPTY._serialized_end=175
+  _USERNAME._serialized_start=177
+  _USERNAME._serialized_end=201
+  _USERVALIDATION._serialized_start=203
+  _USERVALIDATION._serialized_end=236
+  _GREETER._serialized_start=239
+  _GREETER._serialized_end=619
 # @@protoc_insertion_point(module_scope)

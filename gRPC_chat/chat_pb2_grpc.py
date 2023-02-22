@@ -28,32 +28,32 @@ class GreeterStub(object):
         self.SendNote = channel.unary_unary(
                 '/chat.Greeter/SendNote',
                 request_serializer=chat__pb2.Note.SerializeToString,
-                response_deserializer=chat__pb2.Empty.FromString,
+                response_deserializer=chat__pb2.Response.FromString,
                 )
         self.ListAccounts = channel.unary_unary(
                 '/chat.Greeter/ListAccounts',
                 request_serializer=chat__pb2.String.SerializeToString,
-                response_deserializer=chat__pb2.String.FromString,
+                response_deserializer=chat__pb2.Response.FromString,
                 )
         self.DeleteAccount = channel.unary_unary(
                 '/chat.Greeter/DeleteAccount',
                 request_serializer=chat__pb2.UserName.SerializeToString,
-                response_deserializer=chat__pb2.String.FromString,
+                response_deserializer=chat__pb2.Response.FromString,
                 )
         self.CreateAccount = channel.unary_unary(
                 '/chat.Greeter/CreateAccount',
                 request_serializer=chat__pb2.UserName.SerializeToString,
-                response_deserializer=chat__pb2.String.FromString,
+                response_deserializer=chat__pb2.Response.FromString,
                 )
         self.Login = channel.unary_unary(
                 '/chat.Greeter/Login',
                 request_serializer=chat__pb2.UserName.SerializeToString,
-                response_deserializer=chat__pb2.String.FromString,
+                response_deserializer=chat__pb2.Response.FromString,
                 )
         self.Disconnect = channel.unary_unary(
                 '/chat.Greeter/Disconnect',
                 request_serializer=chat__pb2.UserName.SerializeToString,
-                response_deserializer=chat__pb2.String.FromString,
+                response_deserializer=chat__pb2.Response.FromString,
                 )
 
 
@@ -127,32 +127,32 @@ def add_GreeterServicer_to_server(servicer, server):
             'SendNote': grpc.unary_unary_rpc_method_handler(
                     servicer.SendNote,
                     request_deserializer=chat__pb2.Note.FromString,
-                    response_serializer=chat__pb2.Empty.SerializeToString,
+                    response_serializer=chat__pb2.Response.SerializeToString,
             ),
             'ListAccounts': grpc.unary_unary_rpc_method_handler(
                     servicer.ListAccounts,
                     request_deserializer=chat__pb2.String.FromString,
-                    response_serializer=chat__pb2.String.SerializeToString,
+                    response_serializer=chat__pb2.Response.SerializeToString,
             ),
             'DeleteAccount': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteAccount,
                     request_deserializer=chat__pb2.UserName.FromString,
-                    response_serializer=chat__pb2.String.SerializeToString,
+                    response_serializer=chat__pb2.Response.SerializeToString,
             ),
             'CreateAccount': grpc.unary_unary_rpc_method_handler(
                     servicer.CreateAccount,
                     request_deserializer=chat__pb2.UserName.FromString,
-                    response_serializer=chat__pb2.String.SerializeToString,
+                    response_serializer=chat__pb2.Response.SerializeToString,
             ),
             'Login': grpc.unary_unary_rpc_method_handler(
                     servicer.Login,
                     request_deserializer=chat__pb2.UserName.FromString,
-                    response_serializer=chat__pb2.String.SerializeToString,
+                    response_serializer=chat__pb2.Response.SerializeToString,
             ),
             'Disconnect': grpc.unary_unary_rpc_method_handler(
                     servicer.Disconnect,
                     request_deserializer=chat__pb2.UserName.FromString,
-                    response_serializer=chat__pb2.String.SerializeToString,
+                    response_serializer=chat__pb2.Response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -212,7 +212,7 @@ class Greeter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/chat.Greeter/SendNote',
             chat__pb2.Note.SerializeToString,
-            chat__pb2.Empty.FromString,
+            chat__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -229,7 +229,7 @@ class Greeter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/chat.Greeter/ListAccounts',
             chat__pb2.String.SerializeToString,
-            chat__pb2.String.FromString,
+            chat__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -246,7 +246,7 @@ class Greeter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/chat.Greeter/DeleteAccount',
             chat__pb2.UserName.SerializeToString,
-            chat__pb2.String.FromString,
+            chat__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -263,7 +263,7 @@ class Greeter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/chat.Greeter/CreateAccount',
             chat__pb2.UserName.SerializeToString,
-            chat__pb2.String.FromString,
+            chat__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -280,7 +280,7 @@ class Greeter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/chat.Greeter/Login',
             chat__pb2.UserName.SerializeToString,
-            chat__pb2.String.FromString,
+            chat__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -297,6 +297,6 @@ class Greeter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/chat.Greeter/Disconnect',
             chat__pb2.UserName.SerializeToString,
-            chat__pb2.String.FromString,
+            chat__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -30,41 +30,29 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
 
     def ChatStream(self, request, context):
         while True:
-            msgs = self.clients[request.name].msgs
-            while msgs:
-                msg = msgs.popleft()
-                yield msg
-            sleep(0.1)
+            if self.clients[request.name].active:
+                msgs = self.clients[request.name].msgs
+                while msgs:
+                    msg = msgs.popleft()
+                    yield msg
+                sleep(0.1)
 
     def SendNote(self, request, context):
-
+        status = 0
+        sender = 1
         receiver = request.recipient
-
+        msg = ''
         if receiver not in self.clients:
             msg = 'ERROR: Recipient username cannot be found.\n'
-            request.message = msg
+            status = 1
+            sender = 0
         else:
             self.clients[receiver].msgs.append(request)
-        return chat_pb2.Empty()
-
-    def ValidateUser(self, request, context):
-        c_name = request.name
-        if c_name in self.clients:
-            # user is not already logged in - connect to server
-            if not self.clients[c_name].active:
-                self.clients[c_name].active = True
-                return chat_pb2.UserValidation(message=True)
-            # user is already logged in - refuse connection
-            else:
-                return chat_pb2.UserValidation(message=False)
-
-        else:
-            self.clients[c_name] = ClientModel(c_name)
-            self.clients[c_name].active = True
-
-        return chat_pb2.UserValidation(message=True)
+        return chat_pb2.Response(message=msg, status=status, sender=sender)
 
     def ListAccounts(self, request, context):
+        status = 0
+        sender = 0
         accounts = '\n'
         msg = request.message
         if self.clients:
@@ -72,46 +60,58 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
                 accounts += '- ' + key + '\n'
         else:
             accounts = "No accounts have been created."
-        return chat_pb2.String(message=accounts)
+        return chat_pb2.Response(message=accounts, status=status, sender=sender)
 
     def DeleteAccount(self, request, context):
+        status = 0
+        sender = 0
         with self.lock:
             self.clients.pop(request.name)
-            return chat_pb2.String(message=f'Account {request.name} has been deleted. You are now logged out.')
+            return chat_pb2.Response(message=f'Account {request.name} has been deleted. You are now logged out.', status=status, sender=sender)
 
     def CreateAccount(self, request, context):
+        status = 0
+        sender = 0
         with self.lock:
             name = request.name
             # Username is already registered
             if name in self.clients:
                 response = 'Unable to create account: This username is already taken.'
+                status = 1
 
             # Register user - create new client model
             else:
                 self.clients[name] = ClientModel(name, True)
-                response = f'Account created! Logged in as {name}'
+                response = f'Account created! Logged in as {name}.'
                 print(f'{name} has created an account.')
 
-            return chat_pb2.String(message=response)
+            return chat_pb2.Response(message=response, status=status, sender=sender)
 
     def Login(self, request, context):
-        name = request.name
-        response = ''
-        with self.clients[name].lock:
+        status = 0
+        sender = 0
+
+        with self.lock:
+            name = request.name
             if name not in self.clients:
+                print('better be here')
                 response = 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.'
+                status = 1
             elif self.clients[name].active:
                 response = 'Unable to login: This user is already connected to the server.'
+                status = 1
             else:
                 self.clients[name].active = True
-                response = f'Logged in as{request.name}'
+                response = f'Logged in as {request.name}.'
                 print(f'{name} is logged in.')
 
-        return chat_pb2.String(message=response)
+        return chat_pb2.Response(message=response, status=status, sender=sender)
 
     def Disconnect(self, request, context):
         self.clients[request.name].active = False
+        self.clients[request.name].msgs.append(request)
         return chat_pb2.String(message='')
+
 
 
 def main():
