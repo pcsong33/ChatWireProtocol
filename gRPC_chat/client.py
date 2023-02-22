@@ -54,8 +54,9 @@ class Client:
 
     # Method to receive client-to-client messages.
     def receive_msgs(self):
-        msgs = self.conn.ChatStream(chat_pb2.UserName(name=self.name))
-        if msgs:
+        if self.conn:
+            msgs = self.conn.ChatStream(chat_pb2.UserName(name=self.name))
+
             for note in msgs:
                 # print error message
                 if note.sender == "ERROR":
