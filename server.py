@@ -152,7 +152,7 @@ class Server:
             client = None
 
             while True:
-                request = c_socket.recv(1024).decode() # TODO: fix to have header?
+                request = c_socket.recv(1024).decode()
                 op, msg = request.split('|', 1) if '|' in request else (request, '')
                 op, msg = op.strip(), msg.strip()
 

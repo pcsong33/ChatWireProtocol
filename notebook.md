@@ -39,10 +39,10 @@ Ensured that multiple logins cannot occur. If the same user tries to login when 
     1. ~~Client dying~~
     1. ~~Queueing messages for the same client on diff threads (need locking?)~~
     1. ~~Search via text wildcard~~
-    1. Need to send message lengths in buffers? might also fix the time sleeping for queueing stuff
+    1. ~~Need to send message lengths in buffers? might also fix the time sleeping for queueing stuff~~
     1. ~~Message from someone who was deleted~~
 1. ~~General code clean up and abstraction.~~
-1. Unit tests
+1. ~~Unit tests~~
 
 ## 2/12/2023
 

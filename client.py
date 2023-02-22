@@ -121,7 +121,7 @@ class Client:
         op, msg = op.strip(), msg.strip()
 
         opcode = OP_TO_OPCODE[op]
-        encoded_request = (opcode + '|' + msg).encode() # TODO: send with header?
+        encoded_request = (opcode + '|' + msg).encode()
         self.sock.send(encoded_request) 
 
     # Main execution for communicating with chat server

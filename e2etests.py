@@ -224,7 +224,7 @@ class ChatAppTest(unittest.TestCase):
         # Delete for idempotency
         for name in names:
             c.pack_and_send_request('login|' + name)
-            time.sleep(0.01) # TODO: jank
+            time.sleep(0.01) # Need to sleep to mimic time it takes a client to actually type this
             c.pack_and_send_request('delete|' + name)
             time.sleep(0.01)
 
