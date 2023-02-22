@@ -18,6 +18,7 @@ class ClientModel:
         self.msgs = deque([])
         self.active = active
         self.lock = threading.Lock()
+        self.msg_number = 0
 
     def disconnect(self):
         self.active = False
@@ -34,14 +35,13 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
 
     # A stream of messages that the client listens to and receives
     def ChatStream(self, request, context):
-        while True:
-            # only send messages to active users
-            if self.clients[request.name].active:
-                msgs = self.clients[request.name].msgs
-                while msgs:
-                    msg = msgs.popleft()
-                    yield msg
-                sleep(0.1)
+        user = self.clients[request.name]
+        while user.active:
+            while len(user.msgs) > user.msg_number:
+                n = self.clients[request.name].msgs[user.msg_number]
+                user.msg_number += 1
+                yield n
+            sleep(0.1)
 
     # Used by the client to send messages to other clients. The server acts as an intermediary
     # to add messages to a client's queue.
@@ -122,7 +122,6 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
     # Sets active status to False and appends a disconnected message to queue
     def Disconnect(self, request, context):
         self.clients[request.name].active = False
-        self.clients[request.name].msgs.append(request)
         return chat_pb2.String(message='')
 
 

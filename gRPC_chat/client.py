@@ -8,7 +8,7 @@ from threading import Thread
 MAX_REQUEST_LEN = 280
 
 # Change this below to match the server host
-HOST = 'dhcp-10-250-203-22.harvard.edu'
+HOST = 'dhcp-10-250-141-46.harvard.edu'
 
 # Dictionary that converts user-input operations to wire protocol operations
 OP_TO_OPCODE = {
@@ -91,7 +91,6 @@ class Client:
                     print(f'Unable to create account: You are already logged in as {self.name}')
                     return 1
                 res = self.conn.CreateAccount(chat_pb2.UserName(name=msg))
-                self.name = msg
 
             if op == 'login':
                 if self.name:
@@ -190,7 +189,8 @@ class Client:
                 if self.name:
                     self.conn.Disconnect(chat_pb2.UserName(name=self.name))
                     self.channel.close()
-                self.thread.join()
+
+
 
 
 
