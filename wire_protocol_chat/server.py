@@ -236,6 +236,7 @@ class Server:
                 print(f'\n[-] {c_name} has left. Disconnecting client.\n')
                 client.disconnect()
 
+        # Handle client disconnect if unexpected broken connection (e.g. ctrl+c)
         except (BrokenPipeError, ConnectionResetError) as e:
             if (client):
                 print(f'\n[-] Connection with {c_name} has broken. Disconnecting client.\n')
