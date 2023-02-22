@@ -2,18 +2,28 @@ syntax = "proto3";
 
 package chat;
 
+// Structure for client to client messaging
 message Note {
     string sender = 1;
     string recipient = 2;
     string message = 3;
 }
 
+// Structure for client to client messaging
+// Mirrors wire protocol client-server message
 message Response {
   string message = 1;
   int32 status = 2;
   int32 sender = 3;
 }
 
+// The request message containing the user's name.
+// Used for account creation, login, validation
+message UserName {
+  string name = 1;
+}
+
+// simple string definition, used for list
 message String {
   string message = 1;
 }
@@ -22,9 +32,6 @@ message Empty {}
 
 // The greeting service definition.
 service Greeter {
-  // Sends a greeting
-//  rpc SayHello (HelloRequest) returns (HelloReply) {}
-  rpc ValidateUser (UserName) returns (UserValidation) {}
   rpc ChatStream (UserName) returns (stream Note);
   rpc SendNote (Note) returns (Response);
   rpc ListAccounts (String) returns (Response);
@@ -32,16 +39,4 @@ service Greeter {
   rpc CreateAccount (UserName) returns (Response);
   rpc Login (UserName) returns (Response);
   rpc Disconnect (UserName) returns (Response);
-
 }
-
-// The request message containing the user's name.
-message UserName {
-  string name = 1;
-}
-
-// The response message containing the greetings
-message UserValidation {
-  bool message = 1;
-}
-
