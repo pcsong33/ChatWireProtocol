@@ -2,7 +2,11 @@ import socket
 import fnmatch
 import threading
 
-class ClientModel:
+'''
+A User object represents an account that is created. It keeps track of the username, whether the user 
+is active or not, the client socket logged into the account, and the undelivered messages to the user.
+'''
+class User:
     def __init__(self, name, socket=None, addr=None):
         self.name = name
         self.socket = socket
@@ -11,10 +15,12 @@ class ClientModel:
         self.msgs = []
         self.lock = threading.Lock()
     
+    # For setting the socket and address of the user when a client logs in.
     def set_socket_addr(self, socket, addr):
         self.socket = socket
         self.addr = addr
 
+    # When the client logged in as the user disconnects
     def disconnect(self):
         if self.socket:
             self.socket.close()
@@ -22,24 +28,30 @@ class ClientModel:
         self.addr = None
         self.active = False
 
+    # Used by another client to queue a message to this user if they are inactive.
+    # Multiple clients on diff threads may attempt to queue msgs simultaneously, so a lock is needed.
     def queue_msg(self, sender, msg):
-        # Multiple clients on diff threads may attempt to queue msgs simultaneously
         with self.lock:
             self.msgs.append((sender, msg))
 
+    # For clearing the queue of messages after they have been sent.
     def clear_msgs(self):
         self.msgs = []
 
+'''
+The Server object accepts connections from multiple clients, and listens to client requests in order 
+to respond and pass chat messages between clients. It keeps a global dictionary of all User objects.
+'''
 class Server:
     def __init__(self, port=1538):
         self.port = port
         self.s = socket.socket()
         self.host = socket.gethostname()
         self.ip = socket.gethostbyname(self.host)
-        self.clients = {}
+        self.users = {}
         self.lock = threading.Lock()
 
-    # Send messages from server to client according to wire protocol
+    # Package and send messages from server to client according to wire protocol
     def send_msg_to_client(self, c_socket, status, is_chat, msg):
         msg_len = len(msg)
         data = chr(msg_len) + chr(status) + str(is_chat) + msg
@@ -51,15 +63,15 @@ class Server:
         if client:
             self.send_msg_to_client(c_socket, 1, 0, f'Unable to create account: You are already logged in as {c_name}. Please exit and start a new client to log into a different account.')
             return 1
-
+        
         with self.lock:
             # Username is already registered
-            if name in self.clients:
+            if name in self.users:
                 self.send_msg_to_client(c_socket, 1, 0, 'Unable to create account: This username is already taken.')
                 return 1
             
-            # Register user - create new client model
-            self.clients[name] = ClientModel(name, c_socket, addr)
+            # Register user - create new User object
+            self.users[name] = User(name, c_socket, addr)
 
         self.send_msg_to_client(c_socket, 0, 0, f'Account created! Logged in as {name}.')
         print(f'{name} has created an account.')
@@ -73,18 +85,18 @@ class Server:
             return 1
 
         # Username does not exist
-        if name not in self.clients:
+        if name not in self.users:
             self.send_msg_to_client(c_socket, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
             return 1
 
-        with self.clients[name].lock:
-            # Client already active
-            if self.clients[name].active:
+        with self.users[name].lock:
+            # User already active
+            if self.users[name].active:
                 self.send_msg_to_client(c_socket, 1, 0, 'Unable to login: This user is already connected to the server.')
                 return 1
             
-            self.clients[name].set_socket_addr(c_socket, addr)
-            self.clients[name].active = True
+            self.users[name].set_socket_addr(c_socket, addr)
+            self.users[name].active = True
 
         self.send_msg_to_client(c_socket, 0, 0, f'Logged in as {name}.')
         print(f'{name} is logged in.')
@@ -94,14 +106,17 @@ class Server:
     def send_queued_chats(self, client, c_socket, c_name):
         total_msgs = len(client.msgs)
 
+        # No new messages
         if (total_msgs == 0):
             self.send_msg_to_client(c_socket, 2, 0, 'No new messages since you\'ve been gone.')
             return 0
 
         for sender, queued_msg in client.msgs:
+            # Check if queued message is from a deleted user, and display name with [deleted] if so
             deleted_flag = ""
-            if sender not in self.clients:
+            if sender not in self.users:
                 deleted_flag = " [deleted]"
+
             self.send_msg_to_client(c_socket, 0, 1, sender + deleted_flag + '|' + queued_msg)
             print(f'{sender} sent {queued_msg} to {c_name}')
 
@@ -116,14 +131,14 @@ class Server:
             return 1
 
         # Validate recipient
-        if receiver not in self.clients:
+        if receiver not in self.users:
             self.send_msg_to_client(c_socket, 1, 0, 'Recipient username cannot be found.')
             return 1
         if receiver == c_name:
             self.send_msg_to_client(c_socket, 1, 0, 'Cannot send messages to yourself.')
             return 1
         
-        receiver_client = self.clients[receiver]
+        receiver_client = self.users[receiver]
 
         # Queue message if receiver inactive
         if not receiver_client.active:
@@ -153,6 +168,8 @@ class Server:
 
             while True:
                 request = c_socket.recv(1024).decode()
+
+                # Unpack data according to wire protocol
                 op, msg = request.split('|', 1) if '|' in request else (request, '')
                 op, msg = op.strip(), msg.strip()
 
@@ -163,7 +180,7 @@ class Server:
                     # Successfully created account
                     if status == 0:
                         c_name = msg
-                        client = self.clients[c_name]
+                        client = self.users[c_name]
             
                 # Log into existing account
                 elif op == '2':
@@ -172,7 +189,7 @@ class Server:
                     # Successfully logged in
                     if status == 0:
                         c_name = msg
-                        client = self.clients[c_name]
+                        client = self.users[c_name]
 
                         # Send any undelivered messages 
                         self.send_queued_chats(client, c_socket, c_name)
@@ -187,7 +204,7 @@ class Server:
                 elif op == '4':
                     accounts = '\n' 
 
-                    for key in fnmatch.filter(self.clients.keys(), msg if msg else '*'):
+                    for key in fnmatch.filter(self.users.keys(), msg if msg else '*'):
                         accounts += '- ' + key + '\n'
 
                     self.send_msg_to_client(c_socket, 0, 0, accounts)
@@ -200,7 +217,7 @@ class Server:
                         continue
                     
                     with self.lock:
-                        self.clients.pop(c_name)
+                        self.users.pop(c_name)
                         self.send_msg_to_client(c_socket, 0, 0, f'Account {c_name} has been deleted. You are now logged out.')
 
                     print(f'{c_name} has deleted their account.')
@@ -227,12 +244,15 @@ class Server:
     # Main execution for starting server and listening for connections
     def start_server(self):
         try: 
+            # Print out host/IP
             print(f'\n{self.host} ({self.ip})')
 
+            # Bind socket to port
             self.s.bind((self.host, self.port))
 
             print('\nServer started!')
 
+            # Listen for client connections
             self.s.listen(5)
             print('\nWaiting for incoming connections...')
 
@@ -241,15 +261,16 @@ class Server:
 
                 print(f'\n[+] Connected to {addr[0]} ({addr[1]})\n')
 
+                # Start a new thread for each client
                 t = threading.Thread(target=self.on_new_client, args=(c_socket, addr))
                 t.start()
 
         except KeyboardInterrupt:
             print('\nServer closed with KeyboardInterrupt!')
 
-            for c in self.clients:
-                if self.clients[c].socket:
-                    self.clients[c].socket.close()
+            for c in self.users:
+                if self.users[c].socket:
+                    self.users[c].socket.close()
 
             self.s.close()
 

@@ -1,12 +1,18 @@
 import time, socket
 from threading import Thread
 
-# Change this to match the server host
+# Change this below to match the server host
 HOST = 'dhcp-10-250-203-22.harvard.edu'
 
-# Constants
-MAX_REQUEST_LEN = 280
+## Wire Protocol Constants ##
+
+# Maximum number of bytes for a single request to the server
+MAX_REQUEST_LEN = 280 
+
+# Number of bytes in header for message from server to client
 NUM_HEADER_BYTES = 3
+
+# Dictionary that converts user-input operations to wire protocol operations
 OP_TO_OPCODE = {
     'create': '1',
     'login': '2',
@@ -16,12 +22,17 @@ OP_TO_OPCODE = {
     'exit': '6'
 }
 
+'''
+The Client object connects to the server running the chat application. It listens for incoming messages from 
+the server. It also takes in requests from the user via command-line input to be sent to the server.
+'''
 class Client:
     def __init__(self, host=HOST, port=1538):
         self.sock = socket.socket()
         self.host = host
         self.port = port
 
+    # Prints out the instructions for how the user should format requests to use the chat application
     def print_intro_message(self):
         print(' -------------------------------------------------------------------------------------------------------------------')
         print('|                                             Welcome to the Chat Room!                                             |')
@@ -55,7 +66,7 @@ class Client:
 
     # Receive a single response from the server
     def recv_response_from_server(self):
-        # Messages send as [msg_len][status][is_chat][msg]
+        # Messages send as [msg_len][status][is_chat][msg] according to wire protocol
         header = self.recv_k_bytes(NUM_HEADER_BYTES)
         msg_len, status, is_chat = ord(header[0]), ord(header[1]), int(header[2])
         msg = self.recv_k_bytes(msg_len)

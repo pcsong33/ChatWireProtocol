@@ -6,7 +6,7 @@ Final TODO list
 * ~~make folders~~
 * make readme
     * how to actually run the app + pip requirements for grpc
-    * what exactly is the wire protocol
+    * ~~what exactly is the wire protocol~~
     * file structure / high level overview of functions?
 * docstrings
 * combine notebooks

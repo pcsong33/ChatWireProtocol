@@ -33,7 +33,7 @@ Responses from the server to a client are sent in the form `[message length][sta
     * Accepts connections from multiple clients, with a new thread being started for each one. 
     * Listens to requests from the clients, and responds accordingly with messages following the wire protocol. 
     * Passes chat messages between clients.
-    * Keeps a global dictionary of `ClientModel` objects, to keep track of all of the accounts created, socket connections, queued messages, etc.
+    * Keeps a global dictionary of `User` objects, to keep track of all of the accounts created, socket connections, queued messages, etc.
 * `client.py` - Defines the `Client` class.
     * Connects to the server.
     * Runs a background thread to listen for and print messages from the server.

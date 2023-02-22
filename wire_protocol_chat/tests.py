@@ -1,16 +1,22 @@
 import unittest, client, threading, time, sys, os
 from random import randint
 
-# TO RUN THESE TESTS, YOU MUST 1) run server.py, 2) change HOST to match the host of the server, and finally 3) run python3 tests.py
-
 HOST = 'dhcp-10-250-203-22.harvard.edu'
     
+'''
+The ChatAppTest contain tests that spawn `Client` objects connected to the server. These objects send requests to the server within 
+the tests, and the tests check whether the responses from the server are as expected.
+
+TO RUN THESE TESTS, YOU MUST 1) run server.py, 2) change HOST above to match the host of the server, and finally 3) run python3 tests.py
+'''
 class ChatAppTest(unittest.TestCase):
+    # Helper function to check if a server response is exactly what we expect
     def assert_response_equal(self, response, status, is_chat, msg):
         self.assertEqual(status, response[0])
         self.assertEqual(is_chat, response[1])
         self.assertEqual(msg, response[2])
-        
+    
+    # Helper function to check if a server response has exactly the status and is_chat expected, and the message contains the string passed in.
     def assert_response_contains(self, response, status, is_chat, msg):
         self.assertEqual(status, response[0])
         self.assertEqual(is_chat, response[1])
@@ -364,7 +370,7 @@ class ChatAppTest(unittest.TestCase):
         client2.sock.close()
         client3.sock.close()
 
- # Simulates race condition where 100 users are simultaneously sending message to the same account
+    # Simulates race condition where 100 users are simultaneously sending message to the same account
     def test_queue_msg_race(self):
         client0 = client.Client(host=HOST)
         client0.sock.connect((client0.host, client0.port))
@@ -424,6 +430,7 @@ class ChatAppTest(unittest.TestCase):
             clients[i].sock.close()
 
 
+# Helper class used to suppress print statements
 class NoPrint(object):
     def __init__(self,stdout = None, stderr = None):
         self.devnull = open(os.devnull,'w')
