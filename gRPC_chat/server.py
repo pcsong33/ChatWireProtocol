@@ -36,11 +36,9 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
     # A stream of messages that the client listens to and receives
     def ChatStream(self, request, context):
         user = self.clients[request.name]
-        while user.active:
-            while len(user.msgs) > user.msg_number:
-                n = self.clients[request.name].msgs[user.msg_number]
-                user.msg_number += 1
-                yield n
+        while user.msgs:
+            msg = user.msgs.popleft()
+            yield msg
             sleep(0.1)
 
     # Used by the client to send messages to other clients. The server acts as an intermediary
@@ -122,6 +120,7 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
     # Sets active status to False and appends a disconnected message to queue
     def Disconnect(self, request, context):
         self.clients[request.name].active = False
+        self.clients[request.name].msgs.append(chat_pb2.Note(message=''))
         return chat_pb2.String(message='')
 
 
