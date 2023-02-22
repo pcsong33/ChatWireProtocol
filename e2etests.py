@@ -364,47 +364,64 @@ class ChatAppTest(unittest.TestCase):
         client2.sock.close()
         client3.sock.close()
 
-#  # Simulates race condition where 100 users are simultaneously sending message to the same account
-#     def test_queue_msg_race(self):
-#         client0 = client.Client(host=HOST)
-#         client0.sock.connect((client0.host, client0.port))
-#         client0.pack_and_send_request('create|bob')
-#         client0.sock.close()
+ # Simulates race condition where 100 users are simultaneously sending message to the same account
+    def test_queue_msg_race(self):
+        client0 = client.Client(host=HOST)
+        client0.sock.connect((client0.host, client0.port))
+        client0.pack_and_send_request('create|bob')
+        client0.sock.close()
 
-#         num_clients = 100
-#         clients = [None] * num_clients
-#         results = [None] * num_clients
-#         threads = [None] * num_clients
+        num_clients = 100
+        clients = [None] * num_clients
+        results = [None] * num_clients
+        threads = [None] * num_clients
 
-#         def create_bob(c, i):
-#             c.pack_and_send_request(f'login|user{i}')
-
-#             time.sleep(randint(10, 100) * 10**-9 * (num_clients-i)**3)
-
-#             c.pack_and_send_request
+        def create_client_send_msg(c, i):
+            time.sleep(randint(10, 100) * 10**-9 * (num_clients-i)**3)
+            c.pack_and_send_request(f'send|bob|msg{i}')
             
-#             # Record if login was successful
-#             results[i] = 1 - c.recv_response_from_server()[0]
+            # Record if message was successful
+            results[i] = 1 - c.recv_response_from_server()[0]
 
-#         # Start 100 clients in diff threads
-#         for i in range(num_clients):
-#             clients[i] = client.Client(host=HOST)
-#             clients[i].sock.connect((clients[i].host, clients[i].port))
-            
-#             threads[i] = threading.Thread(target=create_bob, args=(clients[i], i))
-#             threads[i].start()
+        # Create 100 diff accounts
+        for i in range(num_clients):
+            clients[i] = client.Client(host=HOST)
+            clients[i].sock.connect((clients[i].host, clients[i].port))
+            clients[i].pack_and_send_request(f'create|user{i}')
+        
+        # Send msgs in diff threads at same time
+        for i in range(num_clients):
+            threads[i] = threading.Thread(target=create_client_send_msg, args=(clients[i], i))
+            threads[i].start()
 
-#         for i in range(num_clients):
-#             threads[i].join()
+        for i in range(num_clients):
+            threads[i].join()
 
-#         # Only one client should have succeeded in logging into the account
-#         self.assertEqual(1, sum(results))
+        # All clients should have succeeded
+        self.assertEqual(num_clients, sum(results))
 
-#         # Delete for idempotency
-#         clients[results.index(1)].pack_and_send_request('delete|bob')
+        # Login bob
+        client0 = client.Client(host=HOST)
+        client0.sock.connect((client0.host, client0.port))
+        client0.pack_and_send_request('login|bob')
+        client0.recv_response_from_server()
 
-#         for i in range(num_clients):
-#             clients[i].sock.close()
+        # Check that all 100 messages were received
+        msgs = set([f'user{i}|msg{i}' for i in range(num_clients)])
+        for i in range(num_clients):
+            msg = client0.recv_response_from_server()[2]
+            self.assertIn(msg, msgs)
+            msgs.remove(msg)
+
+        self.assertEqual(len(msgs), 0)
+
+        # Delete for idempotency
+        client0.pack_and_send_request('delete|bob')
+        client0.sock.close()
+
+        for i in range(num_clients):
+            clients[i].pack_and_send_request(f'delete|user{i}')
+            clients[i].sock.close()
 
 
 class NoPrint(object):
