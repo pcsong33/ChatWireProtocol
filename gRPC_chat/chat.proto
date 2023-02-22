@@ -4,20 +4,39 @@ package chat;
 
 message Note {
     string sender = 1;
-    string message = 2;
+    string recipient = 2;
+    string message = 3;
+}
+
+message String {
+  string message = 1;
 }
 
 message ClientRequest {
   OpType op = 1;
 
   enum OpType {
-    CREATE = 1;
-    LOGIN = 2;
-    SEND = 3;
-    LIST = 4;
-    DELETE = 5;
-    EXIT = 6;
+    CREATE = 0;
+    LOGIN = 1;
+    SEND = 2;
+    LIST = 3;
+    DELETE = 4;
+    EXIT = 5;
   }
+}
+
+message MessageStatus {
+    Status status = 1;
+
+  enum Status {
+    CREATE = 0;
+    LOGIN = 1;
+    SEND = 2;
+    LIST = 3;
+    DELETE = 4;
+    EXIT = 5;
+  }
+
 }
 
 message Empty {}
@@ -29,6 +48,12 @@ service Greeter {
   rpc ValidateUser (UserName) returns (UserValidation) {}
   rpc ChatStream (UserName) returns (stream Note);
   rpc SendNote (Note) returns (Empty);
+  rpc ListAccounts (String) returns (String);
+  rpc DeleteAccount (UserName) returns (String);
+  rpc CreateAccount (UserName) returns (String);
+  rpc Login (UserName) returns (String);
+  rpc Disconnect (UserName) returns (String);
+
 }
 
 // The request message containing the user's name.

@@ -30,6 +30,31 @@ class GreeterStub(object):
                 request_serializer=chat__pb2.Note.SerializeToString,
                 response_deserializer=chat__pb2.Empty.FromString,
                 )
+        self.ListAccounts = channel.unary_unary(
+                '/chat.Greeter/ListAccounts',
+                request_serializer=chat__pb2.String.SerializeToString,
+                response_deserializer=chat__pb2.String.FromString,
+                )
+        self.DeleteAccount = channel.unary_unary(
+                '/chat.Greeter/DeleteAccount',
+                request_serializer=chat__pb2.UserName.SerializeToString,
+                response_deserializer=chat__pb2.String.FromString,
+                )
+        self.CreateAccount = channel.unary_unary(
+                '/chat.Greeter/CreateAccount',
+                request_serializer=chat__pb2.UserName.SerializeToString,
+                response_deserializer=chat__pb2.String.FromString,
+                )
+        self.Login = channel.unary_unary(
+                '/chat.Greeter/Login',
+                request_serializer=chat__pb2.UserName.SerializeToString,
+                response_deserializer=chat__pb2.String.FromString,
+                )
+        self.Disconnect = channel.unary_unary(
+                '/chat.Greeter/Disconnect',
+                request_serializer=chat__pb2.UserName.SerializeToString,
+                response_deserializer=chat__pb2.String.FromString,
+                )
 
 
 class GreeterServicer(object):
@@ -56,6 +81,36 @@ class GreeterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListAccounts(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteAccount(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CreateAccount(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Login(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Disconnect(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_GreeterServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -73,6 +128,31 @@ def add_GreeterServicer_to_server(servicer, server):
                     servicer.SendNote,
                     request_deserializer=chat__pb2.Note.FromString,
                     response_serializer=chat__pb2.Empty.SerializeToString,
+            ),
+            'ListAccounts': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListAccounts,
+                    request_deserializer=chat__pb2.String.FromString,
+                    response_serializer=chat__pb2.String.SerializeToString,
+            ),
+            'DeleteAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteAccount,
+                    request_deserializer=chat__pb2.UserName.FromString,
+                    response_serializer=chat__pb2.String.SerializeToString,
+            ),
+            'CreateAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateAccount,
+                    request_deserializer=chat__pb2.UserName.FromString,
+                    response_serializer=chat__pb2.String.SerializeToString,
+            ),
+            'Login': grpc.unary_unary_rpc_method_handler(
+                    servicer.Login,
+                    request_deserializer=chat__pb2.UserName.FromString,
+                    response_serializer=chat__pb2.String.SerializeToString,
+            ),
+            'Disconnect': grpc.unary_unary_rpc_method_handler(
+                    servicer.Disconnect,
+                    request_deserializer=chat__pb2.UserName.FromString,
+                    response_serializer=chat__pb2.String.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -133,5 +213,90 @@ class Greeter(object):
         return grpc.experimental.unary_unary(request, target, '/chat.Greeter/SendNote',
             chat__pb2.Note.SerializeToString,
             chat__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListAccounts(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chat.Greeter/ListAccounts',
+            chat__pb2.String.SerializeToString,
+            chat__pb2.String.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def DeleteAccount(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chat.Greeter/DeleteAccount',
+            chat__pb2.UserName.SerializeToString,
+            chat__pb2.String.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def CreateAccount(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chat.Greeter/CreateAccount',
+            chat__pb2.UserName.SerializeToString,
+            chat__pb2.String.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Login(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chat.Greeter/Login',
+            chat__pb2.UserName.SerializeToString,
+            chat__pb2.String.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Disconnect(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chat.Greeter/Disconnect',
+            chat__pb2.UserName.SerializeToString,
+            chat__pb2.String.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
