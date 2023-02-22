@@ -8,7 +8,10 @@ import fnmatch
 import threading
 from time import sleep
 
-
+'''
+A ClientModel object represents an account that is created. It keeps track of the username, whether the user 
+is active or not, and the messages to be delivered to the user.
+'''
 class ClientModel:
     def __init__(self, name, active=False):
         self.name = name
@@ -20,16 +23,19 @@ class ClientModel:
         self.active = False
 
 
-clients = {}
-
-
+'''
+The ChatServer class contains the set of all clients/users that have connected to the server. It also contains
+stub functions the client can use to communicate with the server.
+'''
 class ChatServer(chat_pb2_grpc.GreeterServicer):
     def __init__(self):
         self.clients = {}
         self.lock = threading.Lock()
 
+    # A stream of messages that the client listens to and receives
     def ChatStream(self, request, context):
         while True:
+            # only send messages to active users
             if self.clients[request.name].active:
                 msgs = self.clients[request.name].msgs
                 while msgs:
@@ -37,6 +43,8 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
                     yield msg
                 sleep(0.1)
 
+    # Used by the client to send messages to other clients. The server acts as an intermediary
+    # to add messages to a client's queue.
     def SendNote(self, request, context):
         status = 0
         sender = 1
@@ -50,6 +58,7 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
             self.clients[receiver].msgs.append(request)
         return chat_pb2.Response(message=msg, status=status, sender=sender)
 
+    # Method for listing accounts. Message input accounts for wildcards.
     def ListAccounts(self, request, context):
         status = 0
         sender = 0
@@ -62,13 +71,16 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
             accounts = "No accounts have been created."
         return chat_pb2.Response(message=accounts, status=status, sender=sender)
 
+    # Method for deleting accounts.
     def DeleteAccount(self, request, context):
         status = 0
         sender = 0
         with self.lock:
             self.clients.pop(request.name)
-            return chat_pb2.Response(message=f'Account {request.name} has been deleted. You are now logged out.', status=status, sender=sender)
+            return chat_pb2.Response(message=f'Account {request.name} has been deleted. You are now logged out.',
+                                     status=status, sender=sender)
 
+    # Method for creating an account. Returns an error if user already exists
     def CreateAccount(self, request, context):
         status = 0
         sender = 0
@@ -87,6 +99,7 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
 
             return chat_pb2.Response(message=response, status=status, sender=sender)
 
+    # Method for login. Returns an error if user is already active or if username doesn't exist.
     def Login(self, request, context):
         status = 0
         sender = 0
@@ -94,7 +107,6 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
         with self.lock:
             name = request.name
             if name not in self.clients:
-                print('better be here')
                 response = 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.'
                 status = 1
             elif self.clients[name].active:
@@ -107,11 +119,11 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
 
         return chat_pb2.Response(message=response, status=status, sender=sender)
 
+    # Sets active status to False and appends a disconnected message to queue
     def Disconnect(self, request, context):
         self.clients[request.name].active = False
         self.clients[request.name].msgs.append(request)
         return chat_pb2.String(message='')
-
 
 
 def main():
@@ -121,12 +133,13 @@ def main():
         port = '1539'
         print(f'\n{host} ({ip})')
 
+        # start server
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        chat_pb2_grpc.add_GreeterServicer_to_server(ChatServer(), server)
         print('\nServer started!')
         print('\nWaiting for incoming connections...')
 
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        chat_pb2_grpc.add_GreeterServicer_to_server(ChatServer(), server)
-
+        # connect server to host:port
         server.add_insecure_port(f'{host}: {port}')
         server.start()
         server.wait_for_termination()
@@ -134,7 +147,7 @@ def main():
     except KeyboardInterrupt:
         # TODO: close all client sockets too
         print('\nServer closed with KeyboardInterrupt!')
-        server.stop()
+        server.stop(grace=0.1)
 
 
 if __name__ == "__main__":
