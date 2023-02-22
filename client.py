@@ -3,6 +3,8 @@ from threading import Thread
 
 MAX_REQUEST_LEN = 280
 
+NUM_HEADER_BYTES = 3
+
 OP_TO_OPCODE = {
     'create': '1',
     'login': '2',
@@ -33,12 +35,36 @@ class Client:
 
         print(' --------------------------------------------------------------------------------------------------------------------')
     
-    # For background thread that listens for incoming messages to print
-    def receive_msgs(self, sock):
-        # Messages send as [status][is_chat][msg]
-        for msg in iter(lambda: sock.recv(1024).decode(), ''):
-            status, is_chat, msg = ord(msg[0]), int(msg[1]), msg[2:]
+    # Receive exactly k bytes from the server
+    def recv_k_bytes(self, k):
+        bytes_recd = 0
+        msg = ''
 
+        while bytes_recd < k:
+            next_recv = self.sock.recv(k - bytes_recd).decode()
+
+            if next_recv == b'':
+                raise RuntimeError("Server connection broken.")
+
+            bytes_recd += len(next_recv)
+            msg += next_recv
+            
+        return msg
+
+    # Receive a single response from the server
+    def recv_response_from_server(self):
+        # Messages send as [msg_len][status][is_chat][msg]
+        header = self.recv_k_bytes(NUM_HEADER_BYTES)
+        msg_len, status, is_chat = ord(header[0]), ord(header[1]), int(header[2])
+        msg = self.recv_k_bytes(msg_len)
+
+        return status, is_chat, msg
+
+    # For background thread that listens for incoming messages to print
+    def print_messages_from_server(self):
+        status, is_chat, msg = self.recv_response_from_server()
+
+        while msg:
             # Message from another client
             if is_chat:
                 msg = msg.split('|', 1)
@@ -54,6 +80,9 @@ class Client:
                     print(f'\nERROR: {msg}\n')
                 elif status == 2:
                     print(f'\nSERVER MESSAGE: {msg}\n')
+            
+            status, is_chat, msg = self.recv_response_from_server()
+
 
     # Validate requests before sending to server
     def validate_request(self, request):
@@ -106,7 +135,7 @@ class Client:
         self.sock.connect((self.host, self.port))
         print('Connected...\n')
 
-        background_thread = Thread(target=self.receive_msgs, args=(self.sock,))
+        background_thread = Thread(target=self.print_messages_from_server)
         background_thread.daemon = True
         background_thread.start()
 

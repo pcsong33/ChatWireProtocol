@@ -40,28 +40,28 @@ class Server:
         self.lock = threading.Lock()
 
     # Send messages from server to client according to wire protocol
-    def send_message(self, c_socket, status, is_chat, msg):
-        # msg_len = len(msg) # TODO: should we do anything w msg len?
-        data = chr(status) + str(is_chat) + msg
+    def send_msg_to_client(self, c_socket, status, is_chat, msg):
+        msg_len = len(msg)
+        data = chr(msg_len) + chr(status) + str(is_chat) + msg
         c_socket.sendall(data.encode())
             
     # Op 1 - Create Account
     def create_account(self, client, c_socket, c_name, addr, name):
         # Client is already logged in
         if client:
-            self.send_message(c_socket, 1, 0, f'Unable to create account: You are already logged in as {c_name}. Please exit and start a new client to log into a different account.')
+            self.send_msg_to_client(c_socket, 1, 0, f'Unable to create account: You are already logged in as {c_name}. Please exit and start a new client to log into a different account.')
             return 1
 
         with self.lock:
             # Username is already registered
             if name in self.clients:
-                self.send_message(c_socket, 1, 0, 'Unable to create account: This username is already taken.')
+                self.send_msg_to_client(c_socket, 1, 0, 'Unable to create account: This username is already taken.')
                 return 1
             
             # Register user - create new client model
             self.clients[name] = ClientModel(name, c_socket, addr)
 
-        self.send_message(c_socket, 0, 0, f'Account created! Logged in as {name}.')
+        self.send_msg_to_client(c_socket, 0, 0, f'Account created! Logged in as {name}.')
         print(f'{name} has created an account.')
         return 0
 
@@ -69,59 +69,58 @@ class Server:
     def login(self, client, c_socket, c_name, addr, name):
         # Client is already logged in
         if client:
-            self.send_message(c_socket, 1, 0, f'Unable to login: You are already logged in as {c_name}. Please exit  and start a new client to log into a different account.')
+            self.send_msg_to_client(c_socket, 1, 0, f'Unable to login: You are already logged in as {c_name}. Please exit  and start a new client to log into a different account.')
             return 1
 
         # Username does not exist
         if name not in self.clients:
-            self.send_message(c_socket, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
+            self.send_msg_to_client(c_socket, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
             return 1
 
         with self.clients[name].lock:
             # Client already active
             if self.clients[name].active:
-                self.send_message(c_socket, 1, 0, 'Unable to login: This user is already connected to the server.')
+                self.send_msg_to_client(c_socket, 1, 0, 'Unable to login: This user is already connected to the server.')
                 return 1
             
             self.clients[name].set_socket_addr(c_socket, addr)
             self.clients[name].active = True
 
-        self.send_message(c_socket, 0, 0, f'Logged in as {name}.')
+        self.send_msg_to_client(c_socket, 0, 0, f'Logged in as {name}.')
         print(f'{name} is logged in.')
         return 0
 
     # Upon login, send messages user missed
     def send_queued_chats(self, client, c_socket, c_name):
-        time.sleep(0.0001)
+        total_msgs = len(client.msgs)
 
-        if (len(client.msgs) == 0):
-            self.send_message(c_socket, 2, 0, 'No new messages since you\'ve been gone.')
+        if (total_msgs == 0):
+            self.send_msg_to_client(c_socket, 2, 0, 'No new messages since you\'ve been gone.')
             return 0
 
         for sender, queued_msg in client.msgs:
             deleted_flag = ""
             if sender not in self.clients:
                 deleted_flag = " [deleted]"
-            self.send_message(c_socket, 0, 1, sender + deleted_flag + '|' + queued_msg)
+            self.send_msg_to_client(c_socket, 0, 1, sender + deleted_flag + '|' + queued_msg)
             print(f'{sender} sent {queued_msg} to {c_name}')
-            time.sleep(0.0001) # TODO: this is jank
 
-        self.send_message(c_socket, 2, 0, 'Messages you missed while you were away have been delivered above.')
+        self.send_msg_to_client(c_socket, 2, 0, f'You have {total_msgs} missed messages above.')
         client.clear_msgs()
 
     # Op 3 - Send chat messages from client to client
     def send_chat(self, client, c_socket, c_name, receiver, msg):
         # Must be logged in
         if not client:
-            self.send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login or create an account.')
+            self.send_msg_to_client(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login or create an account.')
             return 1
 
         # Validate recipient
         if receiver not in self.clients:
-            self.send_message(c_socket, 1, 0, 'Recipient username cannot be found.')
+            self.send_msg_to_client(c_socket, 1, 0, 'Recipient username cannot be found.')
             return 1
         if receiver == c_name:
-            self.send_message(c_socket, 1, 0, 'Cannot send messages to yourself.')
+            self.send_msg_to_client(c_socket, 1, 0, 'Cannot send messages to yourself.')
             return 1
         
         receiver_client = self.clients[receiver]
@@ -129,18 +128,18 @@ class Server:
         # Queue message if receiver inactive
         if not receiver_client.active:
             receiver_client.queue_msg(c_name, msg)
-            self.send_message(c_socket, 0, 0, f'Message sent to {receiver}.')
+            self.send_msg_to_client(c_socket, 0, 0, f'Message sent to {receiver}.')
             print(f'{c_name} queued {msg} to {receiver}')
             return 0
 
         # Send message on demand if active
         try:
-            self.send_message(receiver_client.socket, 0, 1, c_name + '|' + msg)
-            self.send_message(c_socket, 0, 0, f'Message sent to {receiver}.')
+            self.send_msg_to_client(receiver_client.socket, 0, 1, c_name + '|' + msg)
+            self.send_msg_to_client(c_socket, 0, 0, f'Message sent to {receiver}.')
             print(f'{c_name} sent {msg} to {receiver}')
             return 0
         except BrokenPipeError:
-            self.send_message(c_socket, 1, 0, f'Message could not be sent to {receiver}. Please try again.')
+            self.send_msg_to_client(c_socket, 1, 0, f'Message could not be sent to {receiver}. Please try again.')
             print(f'\n[-] Connection with {receiver_client.name} has broken. Disconnecting client.\n')
             receiver_client.disconnect()
             return 1
@@ -191,18 +190,18 @@ class Server:
                     for key in fnmatch.filter(self.clients.keys(), msg if msg else '*'):
                         accounts += '- ' + key + '\n'
 
-                    self.send_message(c_socket, 0, 0, accounts)
+                    self.send_msg_to_client(c_socket, 0, 0, accounts)
                     
                 # Delete account
                 elif op == '5':
                     # Must be logged in
                     if not client:
-                        self.send_message(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login or create an account.')
+                        self.send_msg_to_client(c_socket, 1, 0, 'Must be logged in to perform this operation. Please login or create an account.')
                         continue
                     
                     with self.lock:
                         self.clients.pop(c_name)
-                        self.send_message(c_socket, 0, 0, f'Account {c_name} has been deleted. You are now logged out.')
+                        self.send_msg_to_client(c_socket, 0, 0, f'Account {c_name} has been deleted. You are now logged out.')
 
                     print(f'{c_name} has deleted their account.')
                     c_name = None
@@ -214,7 +213,7 @@ class Server:
                 
                 # Request was malformed
                 else:
-                    self.send_message(c_socket, 1, 0, 'Invalid operation. Please input your request as [operation]|[params].')
+                    self.send_msg_to_client(c_socket, 1, 0, 'Invalid operation. Please input your request as [operation]|[params].')
             
             if (client):
                 print(f'\n[-] {c_name} has left. Disconnecting client.\n')
