@@ -1,10 +1,12 @@
 import time, socket
 from threading import Thread
 
+# Change this to match the server host
+HOST = 'dhcp-10-250-203-22.harvard.edu'
+
+# Constants
 MAX_REQUEST_LEN = 280
-
 NUM_HEADER_BYTES = 3
-
 OP_TO_OPCODE = {
     'create': '1',
     'login': '2',
@@ -15,7 +17,7 @@ OP_TO_OPCODE = {
 }
 
 class Client:
-    def __init__(self, host='dhcp-10-250-203-22.harvard.edu', port=1538):
+    def __init__(self, host=HOST, port=1538):
         self.sock = socket.socket()
         self.host = host
         self.port = port
@@ -43,7 +45,7 @@ class Client:
         while bytes_recd < k:
             next_recv = self.sock.recv(k - bytes_recd).decode()
 
-            if next_recv == b'':
+            if next_recv == '':
                 raise RuntimeError("Server connection broken.")
 
             bytes_recd += len(next_recv)

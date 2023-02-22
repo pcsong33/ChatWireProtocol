@@ -29,7 +29,7 @@ Client-side:
 * ops: 1 = create account (param: username), 2 = login (param: username), 3 = send message (params: recipient, username), 4 = list accounts (param: wildcard), 5 = delete account, 6 = exit
 
 Server-side:
-* Send message via [status code][indicator if chat/server msg][msg]
+* Send message via [msg length][status code][indicator if chat/server msg][msg]
     * status: 0 = success, 1 = error, 2 = note from server
 * Possible server messages
     * ~~Client is already active / logged in elsewhere~~
