@@ -51,7 +51,7 @@ class ChatAppTest(unittest.TestCase):
 
         # Create bob
         response = client1.conn.CreateAccount(chat_pb2.UserName(name='bob'))
-        self.assert_response_equal(response, 0, 0, 'Account created! Logged in as bob.')
+        self.assert_response_contains(response, 0, 0, 'Account created! Logged in as bob.')
 
         # Another client attempts to create bob
         client2 = client.Client()
@@ -59,7 +59,7 @@ class ChatAppTest(unittest.TestCase):
         client2.conn = chat_pb2_grpc.GreeterStub(client1.channel)
 
         response = client1.conn.CreateAccount(chat_pb2.UserName(name='bob'))
-        self.assert_response_equal(response, 1, 0, 'Unable to create account: This username is already taken.')
+        self.assert_response_contains(response, 1, 0, 'Unable to create account: This username is already taken.')
 
         # Delete for idempotency
         client1.conn.DeleteAccount(chat_pb2.UserName(name='bob'))
@@ -123,7 +123,7 @@ class ChatAppTest(unittest.TestCase):
         client1.channel = grpc.insecure_channel(f'{HOST}:{PORT}')
         client1.conn = chat_pb2_grpc.GreeterStub(client1.channel)
         response = client1.conn.Login(chat_pb2.UserName(name='bob'))
-        self.assert_response_equal(response, 0, 0, 'Logged in as bob.')
+        self.assert_response_contains(response, 0, 0, 'Logged in as bob.')
 
         # Attempt to login alice on same client
         client1.name = 'bob'
@@ -136,7 +136,7 @@ class ChatAppTest(unittest.TestCase):
         client2.conn = chat_pb2_grpc.GreeterStub(client2.channel)
         response = client2.conn.Login(chat_pb2.UserName(name='nick'))
 
-        self.assert_response_equal(response, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
+        self.assert_response_contains(response, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
 
         # Attempt to log into bob even though he's active already
         response = client2.conn.Login(chat_pb2.UserName(name='bob'))
@@ -236,11 +236,11 @@ class ChatAppTest(unittest.TestCase):
         c.conn.CreateAccount(chat_pb2.UserName(name='bob'))
         response = c.conn.DeleteAccount(chat_pb2.UserName(name='bob'))
 
-        self.assert_response_equal(response, 0, 0, 'Account bob has been deleted. You are now logged out.')
+        self.assert_response_contains(response, 0, 0, 'Account bob has been deleted. You are now logged out.')
 
         # Check account is actually deleted
         response = c.conn.Login(chat_pb2.UserName(name='bob'))
-        self.assert_response_equal(response, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
+        self.assert_response_contains(response, 1, 0, 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.')
 
         c.channel.close()
 
@@ -258,7 +258,7 @@ class ChatAppTest(unittest.TestCase):
         c2.conn = chat_pb2_grpc.GreeterStub(c2.channel)
         c2.conn.CreateAccount(chat_pb2.UserName(name='bob'))
         response = c2.conn.SendNote(chat_pb2.Note(sender='bob', message='hello', recipient="ashley"))
-        self.assert_response_equal(response, 1, 0, 'ERROR: Recipient username cannot be found.\n')
+        self.assert_response_contains(response, 1, 0, 'ERROR: Recipient username cannot be found.\n')
 
         # Attempt to send message to oneself
         with NoPrint():
@@ -288,11 +288,11 @@ class ChatAppTest(unittest.TestCase):
 
         # Send messages to bob live
         response = client2.conn.SendNote(chat_pb2.Note(sender='eve', recipient='bob', message='hi'))
-        self.assert_response_equal(response, 0, 1, '')
+        self.assert_response_contains(response, 0, 1, 'Message sent to bob.')
 
         # send messages to eve live
         response = client2.conn.SendNote(chat_pb2.Note(sender='bob', recipient='eve', message='hi'))
-        self.assert_response_equal(response, 0, 1, '')
+        self.assert_response_contains(response, 0, 1, 'Message sent to eve.')
 
         # Delete for idempotency
         client0.conn.DeleteAccount(chat_pb2.UserName(name='alice'))
@@ -385,7 +385,6 @@ class ChatAppTest(unittest.TestCase):
         # All clients should have succeeded
         self.assertEqual(num_clients, sum(results))
 
-        # Delete for idempotency
         # Delete for idempotency
         client0.conn.DeleteAccount(chat_pb2.UserName(name='bob'))
 
