@@ -10,15 +10,8 @@ MAX_REQUEST_LEN = 280
 # Change this below to match the server host
 HOST = 'dhcp-10-250-203-22.harvard.edu'
 
-# Dictionary that converts user-input operations to wire protocol operations
-OP_TO_OPCODE = {
-    'create': '1',
-    'login': '2',
-    'send': '3',
-    'list': '4',
-    'delete': '5',
-    'exit': '6'
-}
+# Set of valid operations
+OPS = set(['create', 'login', 'send', 'list', 'delete', 'exit'])
 
 '''
 The Client object connects to the server running the chat application. It listens for incoming messages from 
@@ -54,14 +47,17 @@ class Client:
 
     # Method to receive client-to-client messages.
     def receive_msgs(self):
-        msgs = self.conn.ChatStream(chat_pb2.UserName(name=self.name))
-        if msgs:
-            for note in msgs:
-                # print error message
-                if note.sender == "ERROR":
-                    print(note.message)
-                else:
-                    print(f'\nMessage from {note.sender}: {note.message}\n')
+        try:
+            msgs = self.conn.ChatStream(chat_pb2.UserName(name=self.name))
+            if msgs:
+                for note in msgs:
+                    # print error message
+                    if note.sender == "ERROR":
+                        print(note.message)
+                    else:
+                        print(f'\nMessage from {note.sender}: {note.message}\n')
+        except Exception:
+            print('Channel closed!')
 
     # Parses through user input and validates a request. Once request had been verified,
     # calls a stub function and connects to the server
@@ -75,7 +71,7 @@ class Client:
         op, msg = op.strip(), msg.strip()
 
         # Operation does not exist
-        if op not in OP_TO_OPCODE:
+        if op not in OPS:
             print('\nINPUT ERROR: Invalid operation. Please input your request as [operation]|[params].\n')
             return 1
 
@@ -104,8 +100,8 @@ class Client:
                 print(res.message)
                 return 1
 
-            else:
-                self.name = msg
+            # Login successful
+            self.name = msg
 
             # Start background thread for receiving chat messages once logged in
             self.thread = Thread(target=self.receive_msgs)
@@ -184,17 +180,12 @@ class Client:
                     if status == 2:
                         if self.name:
                             self.conn.Disconnect(chat_pb2.UserName(name=self.name))
-                            self.channel.close()
-                        break
+                        return
             
             # Gracefully handle keyboard interrupt
             except KeyboardInterrupt:
                 if self.name:
                     self.conn.Disconnect(chat_pb2.UserName(name=self.name))
-                    self.channel.close()
-
-
-
 
 
 

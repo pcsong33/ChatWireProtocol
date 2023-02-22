@@ -129,26 +129,21 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
 
 
 def main():
-    try:
-        host = socket.gethostname()
-        ip = socket.gethostbyname(host)
-        port = '1539'
-        print(f'\n{host} ({ip})')
+    host = socket.gethostname()
+    ip = socket.gethostbyname(host)
+    port = '1539'
+    print(f'\n{host} ({ip})')
 
-        # start server
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        chat_pb2_grpc.add_GreeterServicer_to_server(ChatServer(), server)
-        print('\nServer started!')
-        print('\nWaiting for incoming connections...')
+    # start server
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    chat_pb2_grpc.add_GreeterServicer_to_server(ChatServer(), server)
+    print('\nServer started!')
+    print('\nWaiting for incoming connections...')
 
-        # connect server to host:port
-        server.add_insecure_port(f'{host}: {port}')
-        server.start()
-        server.wait_for_termination()
-
-    finally:
-        print('\nServer closed!')
-        server.stop(grace=0.1)
+    # connect server to host:port
+    server.add_insecure_port(f'{host}: {port}')
+    server.start()
+    server.wait_for_termination()
 
 
 if __name__ == "__main__":
