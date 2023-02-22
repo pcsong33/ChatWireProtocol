@@ -1,6 +1,34 @@
 
 # CS262 Engineering Notebook
 
+## Reflections
+In this section, we note the differences in implementation and performance between the
+gRPC and Wire Protocol versions of the chat application.
+1. **Code Complexity**: The code structure for the gRPC and Wire Protocol implementations were largely similar. Both implementations made use of `Client`
+and `Server` objects that organized the code into client and server-specific functions. The network implementation for both involved having the server stat a new thread for each client that would listen to requests, and responds accordingly with messages.
+The client file would spin up a background thread to listen for and print messages from the server. However, the specific network implementation between the Wire Protocl and gRPC varied:
+    * **Wire Protocol**: Network connection was coded using the `Socket` library in Python. Sockets are the endpoints of a bidirectional communications channel. Sockets support communications between two processes by acting as endpoints of a bidirectional communications channel. 
+   Methods like `sendall()`, `bind()`, `accept()`, etc. are used to enable connection between processes in the code. The Wire Protocol defines a message structure that allows both the client and server to parse and output network communications.
+    * **gRPC**: In gRPC, the client has generated stub functions that provide the same methods as the server. The client and server can then use stubs to interact with other. An example of 
+   stub functions implemented in chat application are:
+      * `ChatStream`
+      * `SendNote` 
+      * `ListAccounts` 
+      * `DeleteAccount` 
+      * `CreateAccount` 
+      * `Login` 
+      * `Disconnect`
+   
+      In the gRPC code, the client parses through a user input and sends a specific stub function based on the parsing.
+2. **Performance Differences**: When comparing our suite of tests on the gRPC and Wire Protocol implementations, the Wire Protocol performed faster. The average speed of test completion over 10 tests are listed below:
+   * **Wire Protocol**: .589 seconds 
+   * **gRPC**: .989 seconds 
+   
+   * These performance differences are likely due to the fact that the Wire Protocol relies on socket level connections, which is much lower-level and requires
+    less overhead than the gRPC model. While the Wire Protocol may be more efficient for shorter chat communications, gRPC will likely perform better when larger data formats are 
+   being sent over the network, as gRPC's utilization of protocol buffers allows for fast parsing and accessing of data. Given that all chat messages were capped at 280 characters, our tests did not cover scenarios where the chat messages contained large amounts of data.
+3. **Buffer Sizes**: INSERT BUFFER SIZE FOR WIRE PROTOCOL HERE. By default, the maximum incoming message size on gRPC is 4 mb. Outgoing server-to-client messages do not have a message limit. 
+
 ## 2/21/2023
 Final TODO list
 * ~~make folders~~
@@ -13,6 +41,22 @@ Final TODO list
     * Add to your notebook comparisons over the complexity of the code, any performance differences, and the size of the buffers being sent back and forth between the client and the server. 
 * grpc tests
 
+## 2/21/2023
+Finished writing unit tests for gRPC and performed some code cleanup as well. Next todos:
+* finish readme
+* finish notebook
+
+## 2/21/2023
+Finalized server functions and fixed an error where one of the queued messaged were not delivering correctly.
+* `ChatStream`
+* `SendNote` 
+* `ListAccounts` 
+* `DeleteAccount` 
+* `CreateAccount` 
+* `Login` 
+* `Disconnect`
+
+
 ## 2/20/2023
 * Made a fix so that when a client exits suddenly (e.g. ctrl c), the broken pipe error is caught and the client is disconnected.
 * I had something weird happen where I got a ConnectionResetError, but I wasn't able to reproduce it.
@@ -20,6 +64,14 @@ Final TODO list
 * I also added a success message when undelivered messages have been sent, in case the user exits suddenly and the messages are cleared before everything has actually been printed.
 * Refactored all of the code so that the client and server files are classes now. 
 * Wrote comprehensive end-to-end tests that test the functionality of the client-side request validations and the request-handling on the server-side.
+
+## 2/19/2023
+Following the wire protocol refactoring, I rewrote the gRPC to mirror much of the code structure. A few key differences are that messages are being fully parsed server-side.
+While in the wire protocol, messages are "packed" and sent using the pipe syntax, in the gRPC code, client requests are parsed client-side, and server functions are called based on the input.
+Some server functions that were implemented are listed below:
+* `ChatStream`
+* `SendNote` 
+* `ValidateUser`
 
 ## 2/19/2023
 I want to rewrite this so that the wire protocol is a lot cleaner and less prone to errors. Outline of what I'm thinking:
@@ -39,6 +91,15 @@ Server-side:
     * ~~Attempting to send message to oneself~~
     * ~~Blank message~~
     * ~~Message is past character limit~~
+
+## 2/17/2023
+gRPC time! We started by following the gRPC python tutorial from the [official docs](https://grpc.io/docs/languages/python/basics/). Throughout the process, we learned how the pb2 files are built from the proto files. In the proto file, we can define certain type restraints and specify the return behavior of functions. After running the build command, python classes are built in the pv2 files, enforcing the rules specified in the proto file. 
+
+The following are possible next steps:
+
+1. Currently, the server is able to connect to the client on an insecure port. We need to see if there is a hostname equivalent in gRPC that we can connect to.
+2. Fill in the `receive_msgs`, `on_new_clients`, etc. equivalents into the gRPC version of the code. Also, we need to investigate the [bi-directional streaming](https://grpc.io/docs/languages/python/basics/#bidirectional-streaming-rpc) form gRPC, as this will be useful for message sending/receiving and has a slightly different setup that the normal client server setup in the ChatWireProtocol code.
+3. Have been using this link as a reference, may be useful to refer to as we continue to make changes: https://melledijkstra.github.io/science/chatting-with-grpc-in-python
 
 ## 2/15/2023
 
