@@ -40,6 +40,7 @@ Responses from the server to a client are sent in the form `[message length][sta
     * Takes in requests from the user via command-line input, which is packaged according to the wire protocol and sent to the server.
 * `tests.py` - Unit tests. To run the tests, you must 1) run `server.py`, 2) change `HOST` in `tests.py` to match the server, and finally 3) run `python3 tests.py`
     * The tests spawn `Client` objects connected to the server. These objects send requests to the server within the tests, and the tests check whether the responses from the server are as expected.
+    * If a `Too many open files` error is received when running tests, run `ulimit -n 2048` to reconfigure the maximum number of open files.
 
 ## gRPC Chat Application
 This application is located in the `gRPC_chat/` directory. 
@@ -105,3 +106,4 @@ The file structure for gRPC follows the WireProtocol structure closely. Function
     * Takes in requests from the user via command-line input, which is parsed client-side and sent to the server based on the specific message.
 * `tests.py` - Unit tests. To run the tests, you must 1) run `server.py`, 2) change `HOST` in `tests.py` to match the server, and finally 3) run `python3 tests.py`
     * The tests spawn `Client` objects connected to the server. These objects send requests to the server within the tests, and the tests check whether the responses from the server are as expected.
+    * If a `Too many open files` error is received when running tests, run `ulimit -n 2048` to reconfigure the maximum number of open files.
