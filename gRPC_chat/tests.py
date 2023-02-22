@@ -29,19 +29,19 @@ class ChatAppTest(unittest.TestCase):
 
         with NoPrint():
             # Request too long
-            self.assertEqual(client1.validate_request('list|' + 'a' * 280), 1)
+            self.assertEqual(client1.validate_and_send_request('list|' + 'a' * 280), 1)
 
             # Nonexistent op
-            self.assertEqual(client1.validate_request('hello|there'), 1)
+            self.assertEqual(client1.validate_and_send_request('hello|there'), 1)
 
             # Blank username
-            self.assertEqual(client1.validate_request('create'), 1)
-            self.assertEqual(client1.validate_request('login| '), 1)
+            self.assertEqual(client1.validate_and_send_request('create'), 1)
+            self.assertEqual(client1.validate_and_send_request('login| '), 1)
 
             # Malformed chat
-            self.assertEqual(client1.validate_request('send'), 1)
-            self.assertEqual(client1.validate_request('send|bob'), 1)
-            self.assertEqual(client1.validate_request('send|bob|  '), 1)
+            self.assertEqual(client1.validate_and_send_request('send'), 1)
+            self.assertEqual(client1.validate_and_send_request('send|bob'), 1)
+            self.assertEqual(client1.validate_and_send_request('send|bob|  '), 1)
 
     # Tests basic functionality of creating an account
     def test_create_account(self):
@@ -230,7 +230,7 @@ class ChatAppTest(unittest.TestCase):
 
         # Attempt delete before login
         with NoPrint():
-            self.assertEqual(c.validate_request('delete|bob'), 1)
+            self.assertEqual(c.validate_and_send_request('delete|bob'), 1)
 
         # Create and delete
         c.conn.CreateAccount(chat_pb2.UserName(name='bob'))
@@ -251,7 +251,7 @@ class ChatAppTest(unittest.TestCase):
         c1.channel = grpc.insecure_channel(f'{HOST}:{PORT}')
         c1.conn = chat_pb2_grpc.GreeterStub(c1.channel)
         with NoPrint():
-            self.assertEqual(c1.validate_request('send|alice|hi'), 1)
+            self.assertEqual(c1.validate_and_send_request('send|alice|hi'), 1)
 
         c2 = client.Client()
         c2.channel = grpc.insecure_channel(f'{HOST}:{PORT}')
@@ -262,7 +262,7 @@ class ChatAppTest(unittest.TestCase):
 
         # Attempt to send message to oneself
         with NoPrint():
-            self.assertEqual(c2.validate_request('send|bob|hi'), 1)
+            self.assertEqual(c2.validate_and_send_request('send|bob|hi'), 1)
 
         # Delete for idempotency
         c2.conn.DeleteAccount(chat_pb2.UserName(name='bob'))

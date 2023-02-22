@@ -8,7 +8,7 @@ from threading import Thread
 MAX_REQUEST_LEN = 280
 
 # Change this below to match the server host
-HOST = 'dhcp-10-250-141-46.harvard.edu'
+HOST = 'dhcp-10-250-203-22.harvard.edu'
 
 # Dictionary that converts user-input operations to wire protocol operations
 OP_TO_OPCODE = {
@@ -61,11 +61,11 @@ class Client:
                 if note.sender == "ERROR":
                     print(note.message)
                 else:
-                    print(f'{note.sender}: {note.message}')
+                    print(f'\nMessage from {note.sender}: {note.message}\n')
 
     # Parses through user input and validates a request. Once request had been verified,
     # calls a stub function and connects to the server
-    def validate_request(self, request):
+    def validate_and_send_request(self, request):
         # Length limit
         if len(request) > MAX_REQUEST_LEN:
             print('\nINPUT ERROR: Please limit requests to 280 characters.\n')
@@ -79,22 +79,24 @@ class Client:
             print('\nINPUT ERROR: Invalid operation. Please input your request as [operation]|[params].\n')
             return 1
 
-        # Validate parameters
+        # Validate and handle request types
         if op == 'create' or op == 'login':
             res = ''
+
+            # Account validation
             if not msg:
                 print('\nINPUT ERROR: Unable to create account: Username cannot be blank.\n')
                 return 1
 
             if op == 'create':
                 if self.name:
-                    print(f'Unable to create account: You are already logged in as {self.name}')
+                    print(f'\nUnable to create account: You are already logged in as {self.name}\n')
                     return 1
                 res = self.conn.CreateAccount(chat_pb2.UserName(name=msg))
 
             if op == 'login':
                 if self.name:
-                    print(f'You are already logged in as {self.name}. Please exit and start a new client to log into a different account.')
+                    print(f'\nYou are already logged in as {self.name}. Please exit and start a new client to log into a different account.\n')
                     return 1
                 res = self.conn.Login(chat_pb2.UserName(name=msg))
 
@@ -105,6 +107,7 @@ class Client:
             else:
                 self.name = msg
 
+            # Start background thread for receiving chat messages once logged in
             self.thread = Thread(target=self.receive_msgs)
             self.thread.daemon = True
             self.thread.start()
@@ -120,18 +123,18 @@ class Client:
                 self.name = None
                 print(accounts.message)
             else:
-                print('Must be logged in to perform this operation. Please login or create an account.')
+                print('\nMust be logged in to perform this operation. Please login or create an account.\n')
                 return 1
 
         elif op == 'exit':
-            if self.name:
-                self.conn.Disconnect(chat_pb2.UserName(name=self.name))
             return 2
 
         elif op == 'send':
             msg_params = msg.split('|', 1)
+
+            # Parameter validation
             if not self.name:
-                print("ERROR: You must be logged in to send a message")
+                print("\nERROR: You must be logged in to send a message\n")
                 return 1
             if len(msg_params) < 2:
                 print('\nINPUT ERROR: Not enough parameters specified. To send a message to another user, please type send|[recipient]|[message].\n')
@@ -140,10 +143,8 @@ class Client:
                 print('\nINPUT ERROR: Message cannot be blank.\n')
                 return 1
             if msg_params[0] == self.name:
-                print('ERROR: Cannot send messages to yourself.\n')
+                print('\nERROR: Cannot send messages to yourself.\n')
                 return 1
-            if msg_params[1] == "":
-                print('ERROR: Cannot send blank messages.\n')
 
             note = chat_pb2.Note(
                 sender=self.name,
@@ -151,8 +152,7 @@ class Client:
                 message=msg_params[1]
             )
             response = self.conn.SendNote(note)
-            if response.status:
-                print(response.message)
+            print(response.message)
 
     def connect_to_server(self):
         print('\nWelcome to Chat Room\n')
@@ -174,7 +174,7 @@ class Client:
                 while True:
                     request = input()
 
-                    status = self.validate_request(request)
+                    status = self.validate_and_send_request(request)
 
                     # Continue if request is invalid
                     if status == 1:
@@ -182,10 +182,12 @@ class Client:
 
                     # Client is exiting
                     if status == 2:
-                        self.channel.close()
-                        time.sleep(0.2)
+                        if self.name:
+                            self.conn.Disconnect(chat_pb2.UserName(name=self.name))
+                            self.channel.close()
                         break
-
+            
+            # Gracefully handle keyboard interrupt
             except KeyboardInterrupt:
                 if self.name:
                     self.conn.Disconnect(chat_pb2.UserName(name=self.name))

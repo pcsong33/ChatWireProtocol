@@ -9,10 +9,10 @@ import threading
 from time import sleep
 
 '''
-A ClientModel object represents an account that is created. It keeps track of the username, whether the user 
+A User object represents an account that is created. It keeps track of the username, whether the user 
 is active or not, and the messages to be delivered to the user.
 '''
-class ClientModel:
+class User:
     def __init__(self, name, active=False):
         self.name = name
         self.msgs = deque([])
@@ -52,11 +52,12 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
         receiver = request.recipient
         msg = ''
         if receiver not in self.clients:
-            msg = 'ERROR: Recipient username cannot be found.\n'
+            msg = '\nERROR: Recipient username cannot be found.\n'
             status = 1
             sender = 0
         else:
             self.clients[receiver].msgs.append(request)
+            msg = f'\nMessage sent to {receiver}.\n'
         return chat_pb2.Response(message=msg, status=status, sender=sender)
 
     # Method for listing accounts. Message input accounts for wildcards.
@@ -69,7 +70,7 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
             for key in fnmatch.filter(self.clients.keys(), msg if msg else '*'):
                 accounts += '- ' + key + '\n'
         else:
-            accounts = "No accounts have been created."
+            accounts = "\nNo accounts have been created.\n"
         return chat_pb2.Response(message=accounts, status=status, sender=sender)
 
     # Method for deleting accounts.
@@ -78,7 +79,7 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
         sender = 0
         with self.lock:
             self.clients.pop(request.name)
-            return chat_pb2.Response(message=f'Account {request.name} has been deleted. You are now logged out.',
+            return chat_pb2.Response(message=f'\nAccount {request.name} has been deleted. You are now logged out.\n',
                                      status=status, sender=sender)
 
     # Method for creating an account. Returns an error if user already exists
@@ -89,33 +90,33 @@ class ChatServer(chat_pb2_grpc.GreeterServicer):
             name = request.name
             # Username is already registered
             if name in self.clients:
-                response = 'Unable to create account: This username is already taken.'
+                response = '\nUnable to create account: This username is already taken.\n'
                 status = 1
 
             # Register user - create new client model
             else:
-                self.clients[name] = ClientModel(name, True)
-                response = f'Account created! Logged in as {name}.'
+                self.clients[name] = User(name, True)
+                response = f'\nAccount created! Logged in as {name}.\n'
                 print(f'{name} has created an account.')
 
-            return chat_pb2.Response(message=response, status=status, sender=sender)
+        return chat_pb2.Response(message=response, status=status, sender=sender)
 
     # Method for login. Returns an error if user is already active or if username doesn't exist.
     def Login(self, request, context):
         status = 0
         sender = 0
 
-        with self.lock:
-            name = request.name
-            if name not in self.clients:
-                response = 'Unable to login: This username does not exist. If you would like to use this username, please create a new account.'
-                status = 1
-            elif self.clients[name].active:
-                response = 'Unable to login: This user is already connected to the server.'
-                status = 1
-            else:
+        name = request.name
+        if name not in self.clients:
+            response = '\nUnable to login: This username does not exist. If you would like to use this username, please create a new account.\n'
+            status = 1
+        elif self.clients[name].active:
+            response = '\nUnable to login: This user is already connected to the server.\n'
+            status = 1
+        else:
+            with self.clients[name].lock:
                 self.clients[name].active = True
-                response = f'Logged in as {request.name}.'
+                response = f'\nLogged in as {request.name}.\n'
                 print(f'{name} is logged in.')
 
         return chat_pb2.Response(message=response, status=status, sender=sender)
@@ -145,9 +146,8 @@ def main():
         server.start()
         server.wait_for_termination()
 
-    except KeyboardInterrupt:
-        # TODO: close all client sockets too
-        print('\nServer closed with KeyboardInterrupt!')
+    finally:
+        print('\nServer closed!')
         server.stop(grace=0.1)
 
 
